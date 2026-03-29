@@ -1,0 +1,50 @@
+/* App.css — minimal reset to clear Vite defaults */
+#root {
+  width: 100%;
+  min-height: 100vh;
+}
+
+/* Game Mode Card Visual Styles */
+.game-mode-visual {
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.vs-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.vs-text {
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+}
+
+.vs-icons {
+  display: flex;
+  gap: 8px;
+}
+
+.vs-icon {
+  font-size: 48px;
+  opacity: 0.9;
+}
+
+.puzzle-container,
+.practice-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.puzzle-icon,
+.practice-icon {
+  font-size: 48px;
+  opacity: 0.9;
+}
