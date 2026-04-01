@@ -22,4 +22,27 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Environment variables (CRITICAL - DO NOT COMMIT)
 .env
+.env.*
+!.env.example
+
+# Testing
+coverage
+test-results
+playwright-report
+
+# Temporary files
+*.tmp
+*.temp
+
+# Caches
+.npm
+.eslintcache
+*.tsbuildinfo
+
+# Session and debug files
+dev.err
+dev.log
+.qoder
