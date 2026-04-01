@@ -46,3 +46,7 @@ playwright-report
 dev.err
 dev.log
 .qoder
+
+# Large binary files - Stockfish WASM (too large for GitHub)
+public/stockfish/**/*.wasm
+public/stockfish/**/*.js
