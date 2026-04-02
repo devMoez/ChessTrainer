@@ -1,7 +1,10 @@
 import React, { useCallback, useState } from 'react';
 import { AppContext, BOARD_THEMES } from './AppContext.jsx';
+import { useCacheInitializer } from '../hooks/useCacheInitializer.js';
 
 export function AppProvider({ children }) {
+  // Initialize global caches for instant preview board rendering
+  useCacheInitializer();
   const [theme, setTheme] = useState(() => {
     if (typeof window === 'undefined') return 'light';
 

@@ -1,5 +1,5 @@
 import React, { memo, useCallback } from 'react';
-import MiniBoard from './MiniBoard.jsx';
+import PreviewBoard from './PreviewBoard.jsx';
 import { HiTrendingUp, HiStar } from 'react-icons/hi';
 import { useApp } from '../context/AppContext.jsx';
 
@@ -44,7 +44,7 @@ const OpeningCard = memo(function OpeningCard({ opening, onClick, highlighted = 
       data-opening-id={opening.id}
     >
       <div className="card-board-area">
-        <MiniBoard
+        <PreviewBoard
           fen={opening.fen}
           lightColor={boardTheme.light}
           darkColor={boardTheme.dark}

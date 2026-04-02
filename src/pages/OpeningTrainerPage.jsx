@@ -82,8 +82,8 @@ export default function OpeningTrainerPage() {
     };
   }, [fen, isBothSidesMode, moveIndex, moves, isPlayerWhite]);
 
-  // v5 API: receives object { piece, sourceSquare, targetSquare }
-  function onPieceDrop({ sourceSquare, targetSquare }) {
+  // v5 API: receives sourceSquare, targetSquare, piece
+  function onPieceDrop(sourceSquare, targetSquare, piece) {
     console.log('DROP CALLED', sourceSquare, targetSquare, 'moveIndex:', moveIndex, 'moves.length:', moves.length);
 
     if (isAIMovingRef.current) {

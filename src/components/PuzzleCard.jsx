@@ -1,6 +1,6 @@
 import React, { memo, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import MiniBoard from './MiniBoard.jsx';
+import PreviewBoard from './PreviewBoard.jsx';
 import { useApp } from '../context/AppContext.jsx';
 
 const difficultyClassMap = {
@@ -61,7 +61,7 @@ const PuzzleCard = memo(function PuzzleCard({ puzzle }) {
       style={{ contain: 'layout style paint' }}
     >
       <div className="puzzle-card-board">
-        <MiniBoard
+        <PreviewBoard
           key={`board-${puzzle.id}`}
           fen={puzzle.fen}
           lightColor={light}
