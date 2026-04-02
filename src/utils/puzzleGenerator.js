@@ -1,7 +1,7 @@
 import { Chess } from 'chess.js';
 
 export class PuzzleGenerator {
-  constructor(stockfishPath = "/stockfish/stockfish-18-lite-single.js") {
+  constructor(stockfishPath = "/stockfish/stockfish-17.1-lite-single-03e3232.js") {
     this.stockfishPath = stockfishPath;
     this.worker = null;
     this.isReady = false;

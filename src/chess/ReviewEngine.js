@@ -121,7 +121,7 @@ function normalizeMoves(initialFen, moves) {
 }
 
 export default class ReviewEngine {
-  constructor({ workerPath = '/stockfish/stockfish-18-lite-single.js', depth = 10 } = {}) {
+  constructor({ workerPath = '/stockfish/stockfish-17.1-lite-single-03e3232.js', depth = 10 } = {}) {
     this.workerPath = workerPath;
     this.depth = depth;
     this.worker = null;

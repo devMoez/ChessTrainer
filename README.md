@@ -18,10 +18,11 @@ A modern, interactive chess training web application built with React and Vite. 
 - Powered by OpenRouter AI
 
 ### 📊 Analysis Tools
-- Real-time position evaluation
-- Move history tracking
-- Best move suggestions
-- Opening repertoire management
+- **Real-time Position Evaluation** - Live Stockfish analysis with depth control
+- **Interactive Analysis Board** - Drag-and-drop pieces with instant response
+- **Move History Tracking** - Complete game notation and navigation
+- **Best Move Suggestions** - Engine-powered recommendations
+- **Opening Repertoire** - 300+ opening variations with practice modes
 
 ## 🚀 Getting Started
 
@@ -62,7 +63,7 @@ npm run dev
 - **Frontend**: React 19, React Router
 - **Chess Logic**: chess.js
 - **Chess UI**: react-chessboard
-- **Chess Engine**: Stockfish 18
+- **Chess Engine**: Stockfish 17.1 (Latest official release)
 - **Styling**: TailwindCSS 4, Framer Motion
 - **AI**: OpenRouter API
 - **Build Tool**: Vite 7

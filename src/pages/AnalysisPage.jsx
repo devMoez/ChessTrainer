@@ -773,7 +773,7 @@ export default function AnalysisPage() {
 
     console.log("ENGINE WORKER CREATED");
     // Use the single-threaded lite WASM build for maximum compatibility and speed
-    const engine = new Worker("/stockfish/stockfish-18-lite-single.js");
+    const engine = new Worker("/stockfish/stockfish-17.1-lite-single-03e3232.js");
 
     engine.onmessage = (event) => {
       handleEngineMessageRef.current(event.data, engine);
@@ -1247,7 +1247,7 @@ export default function AnalysisPage() {
                   arrows={engineArrows}
                   allowDragOffBoard
                   allowDrawingArrows={false}
-                  animationDurationInMs={100}
+                  animationDurationInMs={0}
                   showNotation
                   arePremovesAllowed
                   clearPremovesOnRightClick

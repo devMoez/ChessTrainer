@@ -68,6 +68,8 @@ export default function useChessDragClass() {
     pointerEvents: 'none',
     filter: 'drop-shadow(0 14px 28px rgba(0, 0, 0, 0.34))',
     willChange: 'transform',
+    transition: 'none',
+    cursor: 'grabbing',
   }), []);
 
   const draggingPieceGhostStyle = useMemo(() => ({
