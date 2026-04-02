@@ -28,9 +28,7 @@ const MiniBoard = memo(function MiniBoard({
   const [boardId] = useState(() => nextMiniBoardId());
   const wrapRef = useRef(null);
   const [boardPx, setBoardPx] = useState(0);
-  
-  // Use ref to track if we've measured to avoid unnecessary updates
-  const hasMeasured = useRef(false);
+  const previousWidth = useRef(0);
 
   useEffect(() => {
     const el = wrapRef.current;
@@ -38,19 +36,31 @@ const MiniBoard = memo(function MiniBoard({
 
     const measure = () => {
       const w = Math.floor(el.getBoundingClientRect().width);
-      if (w > 0 && (!hasMeasured.current || Math.abs(boardPx - w) > 5)) {
+      // Update if width is valid and different from previous
+      if (w > 0 && Math.abs(previousWidth.current - w) > 2) {
+        previousWidth.current = w;
         setBoardPx(w);
-        hasMeasured.current = true;
       }
     };
 
+    // Initial measurement
     measure();
+    
+    // Fallback measurement (in case element not ready)
+    const timeout = setTimeout(measure, 50);
 
-    if (typeof ResizeObserver === 'undefined') return;
+    if (typeof ResizeObserver === 'undefined') {
+      clearTimeout(timeout);
+      return;
+    }
+    
     const ro = new ResizeObserver(() => measure());
     ro.observe(el);
-    return () => ro.disconnect();
-  }, [boardPx]);
+    return () => {
+      clearTimeout(timeout);
+      ro.disconnect();
+    };
+  }, []);
 
   const squarePx = useMemo(() => Math.max(1, Math.floor(boardPx / 8)), [boardPx]);
   const pieces = useMemo(() => getPieceRenderers(pieceStyle, squarePx), [pieceStyle, squarePx]);
