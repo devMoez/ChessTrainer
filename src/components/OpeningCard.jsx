@@ -1,5 +1,5 @@
-import React, { memo, useCallback, useEffect } from 'react';
-import PreviewBoard from './PreviewBoard.jsx';
+import React, { memo, useCallback } from 'react';
+import MiniBoard from './MiniBoard.jsx';
 import { HiTrendingUp, HiStar } from 'react-icons/hi';
 import { useApp } from '../context/AppContext.jsx';
 
@@ -15,18 +15,9 @@ function difficultyClass(d) {
 
 const OpeningCard = memo(function OpeningCard({ opening, onClick, highlighted = false }) {
   const { boardTheme } = useApp();
-
-  // Debug logging
-  useEffect(() => {
-    if (import.meta.env.DEV) {
-      console.log('[OpeningCard] Rendering:', { 
-        id: opening.id, 
-        name: opening.name,
-        fen: opening.fen,
-        hasFen: !!opening.fen 
-      });
-    }
-  }, [opening.id, opening.fen, opening.name]);
+  
+  // Debug confirmation
+  console.log("Opening preview restored:", opening.fen);
 
   const handleClick = useCallback(() => {
     onClick?.(opening);
@@ -56,7 +47,7 @@ const OpeningCard = memo(function OpeningCard({ opening, onClick, highlighted = 
       data-opening-id={opening.id}
     >
       <div className="card-board-area">
-        <PreviewBoard
+        <MiniBoard
           fen={opening.fen}
           lightColor={boardTheme.light}
           darkColor={boardTheme.dark}
