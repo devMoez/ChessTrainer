@@ -142,31 +142,9 @@ export default function ChessBoard({
   ]);
 
   return (
-    <ChessboardProvider>
+    <ChessboardProvider options={boardOptions}>
       <div ref={boardWrapRef} className={className} data-board-mode={mode}>
-        <Chessboard
-          id={boardOptions.id}
-          position={boardOptions.position}
-          boardOrientation={boardOptions.boardOrientation}
-          customLightSquareStyle={boardOptions.customLightSquareStyle}
-          customDarkSquareStyle={boardOptions.customDarkSquareStyle}
-          animationDuration={boardOptions.animationDurationInMs}
-          showBoardNotation={boardOptions.showNotation}
-          isDraggablePiece={() => boardOptions.allowDragging}
-          onPieceDrop={boardOptions.onPieceDrop}
-          onSquareClick={boardOptions.onSquareClick}
-          onPieceDrag={boardOptions.onPieceDrag}
-          customBoardStyle={{}}
-          customSquareStyles={boardOptions.squareStyles}
-          customArrows={boardOptions.arrows}
-          customDndBackend={undefined}
-          customDropSquareStyle={{}}
-          customPieces={boardOptions.pieces}
-          customSquare={boardOptions.squareRenderer}
-          arePiecesDraggable={boardOptions.allowDragging}
-          arePremovesAllowed={boardOptions.arePremovesAllowed}
-          clearPremovesOnRightClick={boardOptions.clearPremovesOnRightClick}
-        />
+        <Chessboard />
         {children}
       </div>
     </ChessboardProvider>
