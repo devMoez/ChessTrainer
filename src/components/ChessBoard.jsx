@@ -25,6 +25,7 @@ export default function ChessBoard({
   className = 'chessboard-container premium-board-shell',
   boardId,
   onBoardSizeChange,
+  wrapBoard,
   children,
 }) {
   const { boardTheme, pieceStyle } = useApp();
@@ -141,12 +142,16 @@ export default function ChessBoard({
     squareStyles,
   ]);
 
+  const boardShell = (
+    <div ref={boardWrapRef} className={className} data-board-mode={mode}>
+      <Chessboard />
+      {children}
+    </div>
+  );
+
   return (
     <ChessboardProvider options={boardOptions}>
-      <div ref={boardWrapRef} className={className} data-board-mode={mode}>
-        <Chessboard />
-        {children}
-      </div>
+      {typeof wrapBoard === 'function' ? wrapBoard(boardShell) : boardShell}
     </ChessboardProvider>
   );
 }

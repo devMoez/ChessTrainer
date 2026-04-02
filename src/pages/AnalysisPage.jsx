@@ -14,6 +14,8 @@ import EvalBar from '../components/EvalBar.jsx';
 import ExtraPiecesTrayRow from '../components/ExtraPiecesTray.jsx';
 import GameResultModal from '../components/GameResultModal.jsx';
 import AnalysisSettingsModal from '../components/AnalysisSettingsModal.jsx';
+import { getPieceRenderers } from '../chess/pieceRenderers.jsx';
+import useChessDragClass from '../hooks/useChessDragClass.js';
 import { coordinateToSAN, pvCoordinatesToSAN } from '../utils/moveNotation.js';
 import {
   BrokenCrownIcon,
@@ -1227,92 +1229,97 @@ export default function AnalysisPage() {
       <div className="analysis-grid">
           <section className="board-column">
             <div className="analysis-board-stage">
-              <div className="analysis-tray-wrap">
-                <ExtraPiecesTrayRow
-                  pieceTypes={topTrayPieces}
-                  squarePx={squarePx}
-                  ariaLabel="Extra pieces (top)"
-                />
-              </div>
-
-              <div className="analysis-board-eval-row">
-                <ChessBoard
-                  fen={fen}
-                  mode="analysis"
-                  onMove={onPieceDrop}
-                  isLocked={false}
-                  orientation={orientation}
-                  onSquareClick={onSquareClick}
-                  squareRenderer={squareRenderer}
-                  arrows={engineArrows}
-                  allowDragOffBoard
-                  allowDrawingArrows={false}
-                  animationDurationInMs={0}
-                  showNotation
-                  arePremovesAllowed
-                  clearPremovesOnRightClick
-                  boardId="analysisBoard"
-                  onBoardSizeChange={setBoardPx}
-                >
-                  {engineArrowCallouts.length ? (
-                    <svg
-                      className="analysis-arrow-label-layer"
-                      viewBox={`0 0 ${boardPx} ${boardPx}`}
-                      aria-hidden="true"
-                    >
-                      {engineArrowCallouts.map((callout) => (
-                        <g
-                          key={callout.id}
-                          transform={`translate(${callout.x} ${callout.y})`}
-                        >
-                          <rect
-                            x="-11"
-                            y="-9"
-                            width="22"
-                            height="18"
-                            rx="6"
-                            fill={callout.color}
-                            opacity="0.96"
-                          />
-                          <text
-                            textAnchor="middle"
-                            dominantBaseline="central"
-                            fill="#f7f7f7"
-                            fontSize="10"
-                            fontWeight="700"
-                          >
-                            {callout.label}
-                          </text>
-                        </g>
-                      ))}
-                    </svg>
-                  ) : null}
-                  <button
-                    className="analysis-settings-button"
-                    type="button"
-                    aria-label="Open analysis settings"
-                    onClick={() => setIsSettingsModalOpen(true)}
-                  >
-                    <span aria-hidden="true">⚙</span>
-                  </button>
-                </ChessBoard>
-
-                <div className="analysis-side-rail">
-                  {showEvalBar ? (
-                    <div className="analysis-eval-shell">
-                      <EvalBar percent={evalPercent} scoreText={displayScore} height={boardPx} />
+              <ChessBoard
+                fen={fen}
+                mode="analysis"
+                onMove={onPieceDrop}
+                isLocked={false}
+                orientation={orientation}
+                onSquareClick={onSquareClick}
+                squareRenderer={squareRenderer}
+                arrows={engineArrows}
+                allowDragOffBoard
+                allowDrawingArrows={false}
+                animationDurationInMs={0}
+                showNotation
+                arePremovesAllowed
+                clearPremovesOnRightClick
+                boardId="analysisBoard"
+                onBoardSizeChange={setBoardPx}
+                wrapBoard={(boardShell) => (
+                  <>
+                    <div className="analysis-tray-wrap">
+                      <ExtraPiecesTrayRow
+                        pieceTypes={topTrayPieces}
+                        squarePx={squarePx}
+                        ariaLabel="Extra pieces (top)"
+                      />
                     </div>
-                  ) : null}
-                </div>
-              </div>
 
-              <div className="analysis-tray-wrap analysis-tray-bottom">
-                <ExtraPiecesTrayRow
-                  pieceTypes={bottomTrayPieces}
-                  squarePx={squarePx}
-                  ariaLabel="Extra pieces (bottom)"
-                />
-              </div>
+                    <div className="analysis-board-eval-row">
+                      {boardShell}
+
+                      <div className="analysis-side-rail">
+                        {showEvalBar ? (
+                          <div className="analysis-eval-shell">
+                            <EvalBar percent={evalPercent} scoreText={displayScore} height={boardPx} />
+                          </div>
+                        ) : null}
+                      </div>
+                    </div>
+
+                    <div className="analysis-tray-wrap analysis-tray-bottom">
+                      <ExtraPiecesTrayRow
+                        pieceTypes={bottomTrayPieces}
+                        squarePx={squarePx}
+                        ariaLabel="Extra pieces (bottom)"
+                      />
+                    </div>
+                  </>
+                )}
+              >
+                {engineArrowCallouts.length ? (
+                  <svg
+                    className="analysis-arrow-label-layer"
+                    viewBox={`0 0 ${boardPx} ${boardPx}`}
+                    aria-hidden="true"
+                  >
+                    {engineArrowCallouts.map((callout) => (
+                      <g
+                        key={callout.id}
+                        transform={`translate(${callout.x} ${callout.y})`}
+                      >
+                        <rect
+                          x="-11"
+                          y="-9"
+                          width="22"
+                          height="18"
+                          rx="6"
+                          fill={callout.color}
+                          opacity="0.96"
+                        />
+                        <text
+                          textAnchor="middle"
+                          dominantBaseline="central"
+                          fill="#f7f7f7"
+                          fontSize="10"
+                          fontWeight="700"
+                        >
+                          {callout.label}
+                        </text>
+                      </g>
+                    ))}
+                  </svg>
+                ) : null}
+                <button
+                  className="analysis-settings-button"
+                  type="button"
+                  aria-label="Open analysis settings"
+                  onClick={() => setIsSettingsModalOpen(true)}
+                >
+                  <span aria-hidden="true">⚙</span>
+                </button>
+              </ChessBoard>
             </div>
 
             <div className="analysis-board-summary">
