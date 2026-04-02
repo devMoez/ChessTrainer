@@ -2,7 +2,8 @@ import React, { useState, useCallback, useMemo, useRef, useEffect } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Chess } from 'chess.js';
 import ChessBoard from '../components/ChessBoard.jsx';
-import { HiArrowLeft, HiRefresh, HiCheckCircle, HiXCircle, HiLightBulb, HiChevronRight, HiLogout } from 'react-icons/hi';
+import { HiArrowLeft, HiRefresh, HiCheckCircle, HiXCircle, HiLightBulb, HiChevronRight, HiChevronLeft, HiLogout } from 'react-icons/hi';
+import { PUZZLES_BY_CATEGORY, PUZZLES } from '../data/puzzles.js';
 
 /**
  * Robust SAN normalization to prevent castling and checking mismatches.
@@ -20,45 +21,61 @@ export default function PuzzlePage() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const puzzle = location.state?.puzzle;
+  const initialPuzzle = location.state?.puzzle;
+  
+  // Track current puzzle and category
+  const [currentPuzzle, setCurrentPuzzle] = useState(initialPuzzle);
+  const [categoryPuzzles, setCategoryPuzzles] = useState([]);
+  const [currentIndex, setCurrentIndex] = useState(0);
+
+  // Initialize category puzzles
+  useEffect(() => {
+    if (initialPuzzle) {
+      const puzzles = PUZZLES_BY_CATEGORY[initialPuzzle.category] || [];
+      setCategoryPuzzles(puzzles);
+      const idx = puzzles.findIndex(p => p.id === initialPuzzle.id);
+      setCurrentIndex(idx >= 0 ? idx : 0);
+      setCurrentPuzzle(puzzles[idx >= 0 ? idx : 0] || initialPuzzle);
+    }
+  }, [initialPuzzle]);
 
   useEffect(() => {
-    if (!puzzle) {
+    if (!currentPuzzle) {
       navigate('/puzzles');
     }
-  }, [puzzle, navigate]);
+  }, [currentPuzzle, navigate]);
 
-  const [boardPosition, setBoardPosition] = useState(puzzle?.fen || 'start');
+  const [boardPosition, setBoardPosition] = useState(currentPuzzle?.fen || 'start');
   const [moveIndex, setMoveIndex] = useState(0);
-  const [feedback, setFeedback] = useState(null); // { type: 'correct' | 'wrong', square: string }
+  const [feedback, setFeedback] = useState(null);
   const [highlightSquares, setHighlightSquares] = useState({});
   const feedbackTimeoutRef = useRef(null);
 
-  // Sync state if navigation brings a new puzzle
+  // Sync state when puzzle changes
   useEffect(() => {
-    if (puzzle?.fen) {
-      setBoardPosition(puzzle.fen);
+    if (currentPuzzle?.fen) {
+      setBoardPosition(currentPuzzle.fen);
       setMoveIndex(0);
       setFeedback(null);
       setHighlightSquares({});
     }
-  }, [puzzle]);
+  }, [currentPuzzle]);
 
   const boardOrientation = useMemo(() => {
-    if (!puzzle?.fen) return 'white';
+    if (!currentPuzzle?.fen) return 'white';
     try {
-      const game = new Chess(puzzle.fen);
+      const game = new Chess(currentPuzzle.fen);
       return game.turn() === 'w' ? 'white' : 'black';
     } catch (e) {
       return 'white';
     }
-  }, [puzzle]);
+  }, [currentPuzzle]);
 
-  const isCompleted = moveIndex >= puzzle?.moves.length;
+  const isCompleted = moveIndex >= currentPuzzle?.moves.length;
 
   // Handle move validation
   const handleMove = useCallback(({ sourceSquare, targetSquare }) => {
-    if (!puzzle || isCompleted) return false;
+    if (!currentPuzzle || isCompleted) return false;
 
     try {
       const gameCopy = new Chess(boardPosition);
@@ -66,25 +83,25 @@ export default function PuzzlePage() {
       if (!move) return false;
 
       const played = normalizeSAN(move.san);
-      const expected = normalizeSAN(puzzle.moves[moveIndex]);
+      const expected = normalizeSAN(currentPuzzle.moves[moveIndex]);
 
       if (played === expected) {
         const newFen = gameCopy.fen();
         setBoardPosition(newFen);
         const nextIndex = moveIndex + 1;
         setMoveIndex(nextIndex);
-        setHighlightSquares({}); // Clear hints on correct move
+        setHighlightSquares({});
 
         setFeedback({ type: 'correct', square: targetSquare });
         if (feedbackTimeoutRef.current) clearTimeout(feedbackTimeoutRef.current);
         feedbackTimeoutRef.current = setTimeout(() => setFeedback(null), 900);
 
         // Auto-play opponent reply
-        if (nextIndex < puzzle.moves.length) {
+        if (nextIndex < currentPuzzle.moves.length) {
           setTimeout(() => {
             try {
               const oppGame = new Chess(newFen);
-              const oppMoveStr = puzzle.moves[nextIndex];
+              const oppMoveStr = currentPuzzle.moves[nextIndex];
               oppGame.move(oppMoveStr);
               setBoardPosition(oppGame.fen());
               setMoveIndex(nextIndex + 1);
@@ -104,18 +121,18 @@ export default function PuzzlePage() {
       console.error("Move error:", e);
       return false;
     }
-  }, [boardPosition, moveIndex, puzzle, isCompleted]);
+  }, [boardPosition, moveIndex, currentPuzzle, isCompleted]);
 
   const resetPuzzle = () => {
-    setBoardPosition(puzzle?.fen || 'start');
+    setBoardPosition(currentPuzzle?.fen || 'start');
     setMoveIndex(0);
     setFeedback(null);
     setHighlightSquares({});
   };
 
   const showHint = () => {
-    if (!puzzle || isCompleted) return;
-    const expectedMoveStr = puzzle.moves[moveIndex];
+    if (!currentPuzzle || isCompleted) return;
+    const expectedMoveStr = currentPuzzle.moves[moveIndex];
     if (!expectedMoveStr) return;
 
     try {
@@ -133,10 +150,30 @@ export default function PuzzlePage() {
   };
 
   const nextPuzzle = () => {
-    navigate('/puzzles');
+    if (categoryPuzzles.length === 0) {
+      navigate('/puzzles');
+      return;
+    }
+    const nextIdx = (currentIndex + 1) % categoryPuzzles.length;
+    setCurrentIndex(nextIdx);
+    setCurrentPuzzle(categoryPuzzles[nextIdx]);
   };
 
-  if (!puzzle) {
+  const previousPuzzle = () => {
+    if (categoryPuzzles.length === 0) return;
+    const prevIdx = currentIndex === 0 ? categoryPuzzles.length - 1 : currentIndex - 1;
+    setCurrentIndex(prevIdx);
+    setCurrentPuzzle(categoryPuzzles[prevIdx]);
+  };
+
+  const randomPuzzle = () => {
+    if (categoryPuzzles.length === 0) return;
+    const randomIdx = Math.floor(Math.random() * categoryPuzzles.length);
+    setCurrentIndex(randomIdx);
+    setCurrentPuzzle(categoryPuzzles[randomIdx]);
+  };
+
+  if (!currentPuzzle) {
     return (
       <div style={{ textAlign: 'center', padding: 40 }}>
         <h2>No puzzle selected</h2>
@@ -151,7 +188,12 @@ export default function PuzzlePage() {
         <button className="btn-back" onClick={() => navigate('/puzzles')}>
           <HiArrowLeft /> Back
         </button>
-        <h1>{puzzle.title}</h1>
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <h1>{currentPuzzle.category}</h1>
+          <span style={{ fontSize: '14px', color: 'var(--text-muted)' }}>
+            {currentPuzzle.difficulty} • Puzzle {currentIndex + 1}/{categoryPuzzles.length}
+          </span>
+        </div>
       </div>
 
       <div className="trainer-grid">
@@ -184,6 +226,14 @@ export default function PuzzlePage() {
                 <button className="btn btn-primary" onClick={nextPuzzle}>
                   <HiChevronRight /> Next Puzzle
                 </button>
+                <div style={{ display: 'flex', gap: '8px', width: '100%' }}>
+                  <button className="btn btn-ghost" style={{ flex: 1 }} onClick={previousPuzzle}>
+                    <HiChevronLeft /> Previous
+                  </button>
+                  <button className="btn btn-ghost" style={{ flex: 1 }} onClick={randomPuzzle}>
+                    <HiRefresh /> Random
+                  </button>
+                </div>
                 <button className="btn btn-ghost" onClick={resetPuzzle}>
                   <HiRefresh /> Try Again
                 </button>
@@ -197,13 +247,31 @@ export default function PuzzlePage() {
               <h3>Solve the Puzzle</h3>
               <p>Find the best sequence of moves for {boardOrientation}.</p>
               
-              <div className="trainer-actions">
+              <div className="trainer-actions stacked">
                 <button className="btn btn-ghost" onClick={showHint} title="Show Hint">
                   <HiLightBulb /> Hint
                 </button>
                 <button className="btn btn-ghost" onClick={resetPuzzle} title="Reset Puzzle">
                   <HiRefresh /> Reset
                 </button>
+                <div style={{ display: 'flex', gap: '8px', width: '100%', marginTop: '16px' }}>
+                  <button 
+                    className="btn btn-ghost" 
+                    style={{ flex: 1, fontSize: '13px' }} 
+                    onClick={previousPuzzle}
+                    disabled={categoryPuzzles.length <= 1}
+                  >
+                    <HiChevronLeft /> Prev
+                  </button>
+                  <button 
+                    className="btn btn-ghost" 
+                    style={{ flex: 1, fontSize: '13px' }} 
+                    onClick={nextPuzzle}
+                    disabled={categoryPuzzles.length <= 1}
+                  >
+                    <HiChevronRight /> Next
+                  </button>
+                </div>
               </div>
             </div>
           )}

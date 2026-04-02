@@ -2947,7 +2947,6 @@ body.chess-piece-dragging .chessboard-container [data-piece] {
 .calculate-btn,
 .pv-row,
 .think-time-group,
-.analysis-utility-card,
 .analysis-result-panel,
 .stats-row {
   background: var(--analysis-panel-bg);
@@ -3016,29 +3015,6 @@ body.chess-piece-dragging .chessboard-container [data-piece] {
     radial-gradient(circle at top left, rgba(76, 143, 230, 0.28), transparent 65%),
     rgba(255, 255, 255, 0.07);
   box-shadow: 0 12px 22px rgba(0, 0, 0, 0.18);
-}
-
-.analysis-inline-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-}
-
-.analysis-meta-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 11px;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--analysis-muted);
-  font-size: 12px;
-}
-
-.analysis-meta-pill.success {
-  border-color: rgba(72, 215, 140, 0.22);
-  background: rgba(72, 215, 140, 0.10);
 }
 
 .analysis-warning {
@@ -3402,50 +3378,6 @@ body.chess-piece-dragging .chessboard-container [data-piece] {
   accent-color: var(--analysis-green);
 }
 
-.analysis-utility-grid {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 12px;
-}
-
-.analysis-utility-card,
-.analysis-result-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  padding: 14px;
-  border-radius: 10px;
-}
-
-.analysis-utility-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.analysis-mini-label {
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--analysis-muted);
-}
-
-.analysis-mini-status {
-  padding: 6px 10px;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--analysis-muted);
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.analysis-mini-status.is-live {
-  background: rgba(72, 215, 140, 0.14);
-  color: #daf7e7;
-}
-
 .analysis-settings-backdrop {
   position: fixed;
   inset: 0;
@@ -3760,7 +3692,6 @@ body.chess-piece-dragging .chessboard-container [data-piece] {
 
   .analysis-top-actions,
   .analysis-mode-strip,
-  .analysis-utility-grid,
   .result-action-grid,
   .side-castling-row {
     grid-template-columns: 1fr;

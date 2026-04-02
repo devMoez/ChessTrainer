@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef, useLayoutEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MiniBoard from '../components/MiniBoard.jsx';
 import { OPENINGS } from '../data/openings.js';
@@ -130,6 +130,15 @@ export default function HomePage() {
   const navigate = useNavigate();
   const { boardTheme } = useApp();
 
+  // ZERO-FLASH LAYOUT LOGIC
+  const [layoutReady, setLayoutReady] = useState(false);
+  const containerRef = useRef(null);
+
+  useLayoutEffect(() => {
+    // Sync with browser paint to ensure no flash
+    setLayoutReady(true);
+  }, []);
+
   function handleCardClick(opening) {
     navigate(`/openings?study=${opening.id}`);
   }
@@ -186,12 +195,21 @@ export default function HomePage() {
         </div>
 
         {/* 3-column grid */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(3, 1fr)',
-          gap: '20px',
-          marginTop: '24px',
-        }}>
+        <div 
+          ref={containerRef}
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, 1fr)',
+            gap: '20px',
+            marginTop: '24px',
+            // Key to zero flash: invisible until layout calculation in useLayoutEffect
+            visibility: layoutReady ? 'visible' : 'hidden',
+            opacity: layoutReady ? 1 : 0,
+            transition: 'opacity 0.2s ease-in',
+            minHeight: '400px', // Reserve space for 2 rows roughly
+            willChange: 'opacity'
+          }}
+        >
           {HOME_OPENINGS.map(opening => (
             <HomeOpeningCard
               key={opening.id}

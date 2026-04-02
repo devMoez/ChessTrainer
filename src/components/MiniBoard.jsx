@@ -37,27 +37,6 @@ const MiniBoard = memo(function MiniBoard({ fen, lightColor = '#F0D9B5', darkCol
   const squarePx = useMemo(() => Math.max(1, Math.floor(boardPx / 8)), [boardPx]);
   const pieces = useMemo(() => getPieceRenderers(pieceStyle, squarePx), [pieceStyle, squarePx]);
 
-  // react-chessboard v5 uses `options` object — NOT direct props
-  const boardOptions = useMemo(() => {
-    const options = {
-      id: boardId,
-      position: fen || START_POSITION,
-      boardOrientation: orientation,
-      allowDragging: false,
-      showNotation: false,
-      showAnimations: false,
-      allowDrawingArrows: false,
-      lightSquareStyle: { backgroundColor: lightColor },
-      darkSquareStyle: { backgroundColor: darkColor },
-    };
-
-    if (pieces) {
-      options.pieces = pieces;
-    }
-
-    return options;
-  }, [boardId, fen, pieces, orientation, lightColor, darkColor]);
-
   return (
     <div
       ref={wrapRef}
@@ -66,7 +45,17 @@ const MiniBoard = memo(function MiniBoard({ fen, lightColor = '#F0D9B5', darkCol
       aria-hidden="true"
     >
       {boardPx > 0 && (
-        <Chessboard options={boardOptions} />
+        <Chessboard
+          id={boardId}
+          position={fen || START_POSITION}
+          boardOrientation={orientation}
+          arePiecesDraggable={false}
+          showBoardNotation={false}
+          animationDuration={0}
+          customDarkSquareStyle={{ backgroundColor: darkColor }}
+          customLightSquareStyle={{ backgroundColor: lightColor }}
+          customPieces={pieces}
+        />
       )}
     </div>
   );

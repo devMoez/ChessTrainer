@@ -1458,36 +1458,6 @@ export default function AnalysisPage() {
               <div className="pv-display">{deferredPv || (isCalculating ? 'Analyzing...' : '--')}</div>
             </div>
 
-            <div className="analysis-utility-grid">
-              <div className="analysis-utility-card">
-                <div className="analysis-utility-header">
-                  <span className="analysis-mini-label">Board tools</span>
-                  <button className="ctrl-btn ctrl-btn-secondary" onClick={handleNewGame} type="button">
-                    New Game
-                  </button>
-                </div>
-
-                <div className="analysis-inline-meta">
-                  <span className={`analysis-meta-pill${gameResult ? ' success' : ''}`}>
-                    Status: <strong>{gameStatusText}</strong>
-                  </span>
-                  <span className="analysis-meta-pill">
-                    En passant: <strong>{autoEnPassant ? 'Auto' : 'Off'}</strong>
-                  </span>
-                  <span className="analysis-meta-pill">
-                    Variant: <strong>{showMove ? 'Show move' : 'Make move'}</strong>
-                  </span>
-                  <span className="analysis-meta-pill">
-                    Moves: <strong>{moves.length}</strong>
-                  </span>
-                  {recentMoves ? (
-                    <span className="analysis-meta-pill">
-                      Recent: <strong>{recentMoves}</strong>
-                    </span>
-                  ) : null}
-                </div>
-              </div>
-            </div>
           </section>
         </div>
 

@@ -437,30 +437,6 @@ IMPORTANT: Return ONLY the raw JSON array. NO markdown blocks. NO unescaped quot
     return styles;
   }, [currentAnalysis]);
 
-  const coachBoardOptions = useMemo(() => {
-    const safeFen = currentBoardFen || DEFAULT_FEN;
-    const safeOrientation = (boardOrientation || 'white').toLowerCase() === 'black' ? 'black' : 'white';
-    
-    const opts = {
-      id: 'coachBoard',
-      position: safeFen,
-      boardOrientation: safeOrientation,
-      lightSquareStyle: { backgroundColor: boardTheme?.light || '#ebecd0' },
-      darkSquareStyle: { backgroundColor: boardTheme?.dark || '#779556' },
-      animationDurationInMs: 100,
-      showNotation: true,
-      arePiecesDraggable: false,
-      customSquareStyles: blunderStyleMap,
-      arrows: localAnalysisArrows
-    };
-    
-    // Explicitly omit pieces if undefined to prevent react-chessboard v5 from overwriting defaults
-    const customPieces = getPieceRenderers(pieceStyle);
-    if (customPieces) opts.pieces = customPieces;
-    
-    return opts;
-  }, [currentBoardFen, boardOrientation, boardTheme, blunderStyleMap, localAnalysisArrows, pieceStyle]);
-
 
   return (
     <>
@@ -545,7 +521,19 @@ IMPORTANT: Return ONLY the raw JSON array. NO markdown blocks. NO unescaped quot
 
               {/* Exact matching shell to AnalysisPage */}
               <div className="chessboard-container premium-board-shell" style={{ width: '100%', maxWidth: 540, margin: '0 auto' }}>
-                <Chessboard options={coachBoardOptions} />
+                <Chessboard
+                  id="coachBoard"
+                  position={currentBoardFen || DEFAULT_FEN}
+                  boardOrientation={(boardOrientation || 'white').toLowerCase() === 'black' ? 'black' : 'white'}
+                  customDarkSquareStyle={{ backgroundColor: boardTheme?.dark || '#779556' }}
+                  customLightSquareStyle={{ backgroundColor: boardTheme?.light || '#ebecd0' }}
+                  animationDuration={100}
+                  showBoardNotation={true}
+                  arePiecesDraggable={false}
+                  customSquareStyles={blunderStyleMap}
+                  customArrows={localAnalysisArrows}
+                  customPieces={getPieceRenderers(pieceStyle)}
+                />
               </div>
 
               {/* Multiple Upload Timeline / Controls */}

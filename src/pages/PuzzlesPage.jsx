@@ -1,48 +1,32 @@
-import React, { useState, useMemo, useEffect } from 'react';
-import { HiSearch, HiRefresh } from 'react-icons/hi';
+import React, { useState, useMemo, useLayoutEffect, useRef } from 'react';
+import { HiSearch, HiRefresh, HiFilter } from 'react-icons/hi';
 import PuzzleCard from '../components/PuzzleCard.jsx';
-import { PUZZLES } from '../data/puzzles.js';
-import { PuzzleGenerator } from '../utils/puzzleGenerator.js';
+import { PUZZLES, PUZZLE_CATEGORIES, PUZZLE_DIFFICULTIES } from '../data/puzzles.js';
 
 export default function PuzzlesPage() {
   const [query, setQuery] = useState('');
-  const [dynamicPuzzles, setDynamicPuzzles] = useState([]);
-  const [isGenerating, setIsGenerating] = useState(false);
-
-  const allPuzzles = useMemo(() => [...PUZZLES, ...dynamicPuzzles], [dynamicPuzzles]);
+  const [category, setCategory] = useState('All');
+  const [difficulty, setDifficulty] = useState('All');
+  
+  // ZERO-FLASH LAYOUT LOGIC
+  const [layoutReady, setLayoutReady] = useState(false);
+  const containerRef = useRef(null);
 
   const filteredPuzzles = useMemo(() => {
-    return allPuzzles.filter(p => 
-      p.title.toLowerCase().includes(query.toLowerCase()) ||
-      p.difficulty.toLowerCase().includes(query.toLowerCase())
-    );
-  }, [allPuzzles, query]);
-
-  const generateRandomPuzzle = async () => {
-    setIsGenerating(true);
-    const generator = new PuzzleGenerator();
-    try {
-      // Use a common tactical position as a seed for demonstration
-      const seedFens = [
-        "r1bq1rk1/ppp2ppp/2np1n2/4p3/2B1P3/2PP1N2/PP3PPP/RNBQ1RK1 w - - 0 1",
-        "rnbqkb1r/pppp1ppp/5n2/4p3/4P3/5N2/PPPP1PPP/RNBQKB1R w KQkq - 2 3",
-        "r1bqk2r/pppp1ppp/2n2n2/4p3/1bB1P3/2P2N2/PP1P1PPP/RNBQK2R w KQkq - 1 5"
-      ];
-      const randomFen = seedFens[Math.floor(Math.random() * seedFens.length)];
+    return PUZZLES.filter(p => {
+      const matchesQuery = p.category.toLowerCase().includes(query.toLowerCase()) ||
+                          p.difficulty.toLowerCase().includes(query.toLowerCase()) ||
+                          (p.tags && p.tags.some(t => t.toLowerCase().includes(query.toLowerCase())));
+      const matchesCategory = category === 'All' || p.category === category;
+      const matchesDifficulty = difficulty === 'All' || p.difficulty === difficulty;
       
-      const newPuzzle = await generator.generateFromFen(randomFen);
-      if (newPuzzle) {
-        setDynamicPuzzles(prev => [newPuzzle, ...prev]);
-      } else {
-        alert("No tactic found in current position analysis.");
-      }
-    } catch (e) {
-      console.error(e);
-    } finally {
-      generator.terminate();
-      setIsGenerating(false);
-    }
-  };
+      return matchesQuery && matchesCategory && matchesDifficulty;
+    });
+  }, [query, category, difficulty]);
+
+  useLayoutEffect(() => {
+    setLayoutReady(true);
+  }, [filteredPuzzles]);
 
   return (
     <div className="puzzles-page-container">
@@ -50,42 +34,74 @@ export default function PuzzlesPage() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <div>
             <h1>Puzzle Library</h1>
-            <p>Sharpen your tactics with curated chess puzzles.</p>
+            <p>Master tactics with real, verified chess positions.</p>
           </div>
-          <button 
-            className="btn btn-primary" 
-            onClick={generateRandomPuzzle} 
-            disabled={isGenerating}
-            style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
-          >
-            <HiRefresh className={isGenerating ? 'spin' : ''} />
-            {isGenerating ? 'Analyzing...' : 'Generate Puzzle'}
-          </button>
         </div>
       </div>
 
-      <div className="filter-bar">
-        <div className="filter-search">
+      <div className="filter-bar" style={{ display: 'flex', flexWrap: 'wrap', gap: '16px', alignItems: 'center' }}>
+        <div className="filter-search" style={{ flex: '1 1 300px' }}>
           <HiSearch size={16} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
           <input
             type="search"
-            placeholder="Search puzzles..."
+            placeholder="Search by theme (e.g. fork, pin)..."
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             aria-label="Search puzzles"
           />
         </div>
-        <span className="filter-result-count">
-          {filteredPuzzles.length} puzzle{filteredPuzzles.length !== 1 ? 's' : ''}
+
+        <div className="filter-group" style={{ display: 'flex', gap: '12px' }}>
+          <div className="select-wrapper">
+            <select 
+              value={category} 
+              onChange={(e) => setCategory(e.target.value)}
+              className="filter-select"
+            >
+              {PUZZLE_CATEGORIES.map(cat => (
+                <option key={cat} value={cat}>{cat}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="select-wrapper">
+            <select 
+              value={difficulty} 
+              onChange={(e) => setDifficulty(e.target.value)}
+              className="filter-select"
+            >
+              {PUZZLE_DIFFICULTIES.map(diff => (
+                <option key={diff} value={diff}>{diff}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <span className="filter-result-count" style={{ marginLeft: 'auto' }}>
+          {filteredPuzzles.length} verified puzzle{filteredPuzzles.length !== 1 ? 's' : ''}
         </span>
       </div>
 
       {filteredPuzzles.length === 0 ? (
         <div className="card-placeholder" style={{ minHeight: 300 }}>
-          <p>No puzzles found for "{query}"</p>
+          <p>No puzzles found matching your filters.</p>
+          <button className="btn btn-ghost btn-sm" onClick={() => {
+            setQuery('');
+            setCategory('All');
+            setDifficulty('All');
+          }}>Clear Filters</button>
         </div>
       ) : (
-        <div className="grid-4">
+        <div 
+          className="puzzle-grid-compact"
+          ref={containerRef}
+          style={{
+            visibility: layoutReady ? 'visible' : 'hidden',
+            opacity: layoutReady ? 1 : 0,
+            transition: 'opacity 0.2s ease-in',
+            minHeight: '600px'
+          }}
+        >
           {filteredPuzzles.map((puzzle) => (
             <PuzzleCard key={puzzle.id} puzzle={puzzle} />
           ))}
@@ -94,18 +110,58 @@ export default function PuzzlesPage() {
 
       <style dangerouslySetInnerHTML={{ __html: `
         .puzzles-page-container { padding-bottom: 40px; }
-        .grid-4 { 
+        
+        .puzzle-grid-compact { 
           display: grid; 
-          grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); 
-          gap: 20px; 
-          margin-top: 24px; 
+          grid-template-columns: repeat(auto-fill, minmax(300px, 320px));
+          justify-content: center;
+          gap: 24px; 
+          margin-top: 24px;
         }
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
+        
+        @media (min-width: 1400px) {
+          .puzzle-grid-compact {
+            grid-template-columns: repeat(4, 320px);
+          }
         }
-        .spin {
-          animation: spin 1s linear infinite;
+        
+        @media (min-width: 1024px) and (max-width: 1399px) {
+          .puzzle-grid-compact {
+            grid-template-columns: repeat(3, 320px);
+          }
+        }
+        
+        @media (min-width: 768px) and (max-width: 1023px) {
+          .puzzle-grid-compact {
+            grid-template-columns: repeat(2, 320px);
+          }
+        }
+        
+        @media (max-width: 767px) {
+          .puzzle-grid-compact {
+            grid-template-columns: 1fr;
+            max-width: 320px;
+            margin-left: auto;
+            margin-right: auto;
+          }
+        }
+        
+        .filter-select {
+          background: var(--bg-surface);
+          border: 1px solid var(--border);
+          color: var(--text-primary);
+          padding: 8px 12px;
+          border-radius: 8px;
+          font-size: 14px;
+          cursor: pointer;
+          outline: none;
+          min-width: 140px;
+        }
+        .filter-select:hover {
+          border-color: var(--accent-gold);
+        }
+        .select-wrapper {
+          position: relative;
         }
       `}} />
     </div>

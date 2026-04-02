@@ -1,5 +1,6 @@
 import React, {
   useEffect,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -46,6 +47,10 @@ export default function OpeningsPage() {
   const [selectedOpening, setSelectedOpening] = useState(null);
   const [highlightedOpeningId, setHighlightedOpeningId] = useState(null);
 
+  // ZERO-FLASH LAYOUT LOGIC
+  const [layoutReady, setLayoutReady] = useState(false);
+  const containerRef = useRef(null);
+
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
       setDebouncedQuery(query.trim());
@@ -80,6 +85,15 @@ export default function OpeningsPage() {
     () => filtered.slice((displayPage - 1) * PAGE_SIZE, displayPage * PAGE_SIZE),
     [displayPage, filtered]
   );
+
+  // useLayoutEffect runs SYNCHRONOUSLY before paint
+  useLayoutEffect(() => {
+    const updateLayout = () => {
+      if (!containerRef.current) return;
+      setLayoutReady(true);
+    };
+    updateLayout();
+  }, [paginated, debouncedQuery, difficulty, colorFilter]);
 
   useEffect(() => {
     if (!focusOpeningId || !focusPage || lastHighlightKeyRef.current === focusKey) return;
@@ -280,7 +294,19 @@ export default function OpeningsPage() {
           </button>
         </div>
       ) : (
-        <div className="grid-4">
+        <div
+          className="grid-4"
+          ref={containerRef}
+          style={{
+            // Key to zero flash: invisible until layout calculation in useLayoutEffect
+            visibility: layoutReady ? 'visible' : 'hidden',
+            opacity: layoutReady ? 1 : 0,
+            transition: 'opacity 0.2s ease-in',
+            // Pre-calculate min-height to prevent layout shift below the grid
+            minHeight: '600px',
+            willChange: 'opacity'
+          }}
+        >
           {paginated.map((opening) => (
             <OpeningCard
               key={opening.id}
@@ -391,17 +417,14 @@ function StudyModal({ opening, onClose, onPlay, boardTheme }) {
           boxShadow: 'var(--shadow-lg)'
         }}>
           <Chessboard
-            options={{
-              id: `study-board-${opening.id}`,
-              position: opening.fen,
-              boardOrientation: opening.color?.toLowerCase() === 'black' ? 'black' : 'white',
-              allowDragging: false,
-              showNotation: false,
-              showAnimations: false,
-              allowDrawingArrows: false,
-              lightSquareStyle: { backgroundColor: boardTheme.light },
-              darkSquareStyle: { backgroundColor: boardTheme.dark },
-            }}
+            id={`study-board-${opening.id}`}
+            position={opening.fen}
+            boardOrientation={opening.color?.toLowerCase() === 'black' ? 'black' : 'white'}
+            arePiecesDraggable={false}
+            showBoardNotation={false}
+            animationDuration={0}
+            customDarkSquareStyle={{ backgroundColor: boardTheme.dark }}
+            customLightSquareStyle={{ backgroundColor: boardTheme.light }}
           />
         </div>
 
