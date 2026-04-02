@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Chessboard, ChessboardProvider } from 'react-chessboard';
+import { Chessboard } from 'react-chessboard';
 import { useApp } from '../context/AppContext.jsx';
 import { getPieceRenderers } from '../chess/pieceRenderers.jsx';
 import useChessDragClass from '../hooks/useChessDragClass.js';
@@ -142,11 +142,31 @@ export default function ChessBoard({
   ]);
 
   return (
-    <ChessboardProvider options={boardOptions}>
-      <div ref={boardWrapRef} className={className} data-board-mode={mode}>
-        <Chessboard />
-        {children}
-      </div>
-    </ChessboardProvider>
+    <div ref={boardWrapRef} className={className} data-board-mode={mode}>
+      <Chessboard
+        id={boardOptions.id}
+        position={boardOptions.position}
+        boardOrientation={boardOptions.boardOrientation}
+        customLightSquareStyle={boardOptions.customLightSquareStyle}
+        customDarkSquareStyle={boardOptions.customDarkSquareStyle}
+        animationDuration={boardOptions.animationDurationInMs}
+        showBoardNotation={boardOptions.showNotation}
+        isDraggablePiece={() => boardOptions.allowDragging}
+        onPieceDrop={boardOptions.onPieceDrop}
+        onSquareClick={boardOptions.onSquareClick}
+        onPieceDrag={boardOptions.onPieceDrag}
+        customBoardStyle={{}}
+        customSquareStyles={boardOptions.squareStyles}
+        customArrows={boardOptions.arrows}
+        customDndBackend={undefined}
+        customDropSquareStyle={{}}
+        customPieces={boardOptions.pieces}
+        customSquare={boardOptions.squareRenderer}
+        arePiecesDraggable={boardOptions.allowDragging}
+        arePremovesAllowed={boardOptions.arePremovesAllowed}
+        clearPremovesOnRightClick={boardOptions.clearPremovesOnRightClick}
+      />
+      {children}
+    </div>
   );
 }
