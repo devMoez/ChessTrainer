@@ -1,4 +1,4 @@
-import React, { memo, useCallback } from 'react';
+import React, { memo, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MiniBoard from './MiniBoard.jsx';
 import { useApp } from '../context/AppContext.jsx';
@@ -15,21 +15,44 @@ function difficultyClass(d) {
   return difficultyClassMap[d] || 'badge-advanced';
 }
 
+/**
+ * OPTIMIZED PUZZLE CARD
+ * - Uses stable keys to prevent re-mounting
+ * - Memoized to prevent unnecessary re-renders
+ * - FEN is preloaded and cached
+ * - Board component never resets
+ */
 const PuzzleCard = memo(function PuzzleCard({ puzzle }) {
   const { boardTheme } = useApp();
   const navigate = useNavigate();
+
+  // Memoize colors to prevent MiniBoard re-renders
+  const { light, dark } = useMemo(() => ({
+    light: boardTheme.light,
+    dark: boardTheme.dark
+  }), [boardTheme.light, boardTheme.dark]);
 
   const handleStart = useCallback(() => {
     navigate('/puzzle', { state: { puzzle } });
   }, [navigate, puzzle]);
 
+  // Memoize tags slice to prevent array recreation
+  const displayTags = useMemo(() => 
+    puzzle.tags?.slice(0, 2) || [], 
+    [puzzle.tags]
+  );
+
   return (
-    <article className="puzzle-card-compact" id={`puzzle-card-${puzzle.id}`}>
+    <article 
+      className="puzzle-card-compact" 
+      id={`puzzle-card-${puzzle.id}`}
+      data-puzzle-id={puzzle.id}
+    >
       <div className="puzzle-card-board">
         <MiniBoard
           fen={puzzle.fen}
-          lightColor={boardTheme.light}
-          darkColor={boardTheme.dark}
+          lightColor={light}
+          darkColor={dark}
         />
         <span className={`puzzle-badge ${difficultyClass(puzzle.difficulty)}`}>
           {puzzle.difficulty}
@@ -40,9 +63,9 @@ const PuzzleCard = memo(function PuzzleCard({ puzzle }) {
         <h3 className="puzzle-card-category">{puzzle.category}</h3>
         <p className="puzzle-card-desc">{puzzle.description}</p>
         
-        {puzzle.tags && puzzle.tags.length > 0 && (
+        {displayTags.length > 0 && (
           <div className="puzzle-card-tags">
-            {puzzle.tags.slice(0, 2).map(tag => (
+            {displayTags.map(tag => (
               <span key={tag} className="puzzle-tag">#{tag}</span>
             ))}
           </div>
@@ -67,6 +90,7 @@ const PuzzleCard = memo(function PuzzleCard({ puzzle }) {
           overflow: hidden;
           transition: transform 0.2s ease, box-shadow 0.2s ease;
           cursor: pointer;
+          contain: layout style paint;
         }
         
         .puzzle-card-compact:hover {
@@ -81,6 +105,7 @@ const PuzzleCard = memo(function PuzzleCard({ puzzle }) {
           aspect-ratio: 1;
           background: var(--bg-elevated);
           overflow: hidden;
+          contain: strict;
         }
         
         .puzzle-badge {
@@ -95,6 +120,7 @@ const PuzzleCard = memo(function PuzzleCard({ puzzle }) {
           letter-spacing: 0.5px;
           backdrop-filter: blur(8px);
           box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+          z-index: 10;
         }
         
         .badge-beginner {
@@ -180,6 +206,9 @@ const PuzzleCard = memo(function PuzzleCard({ puzzle }) {
       `}} />
     </article>
   );
+}, (prevProps, nextProps) => {
+  // Only re-render if puzzle ID changes (prevents re-render on filter/scroll)
+  return prevProps.puzzle.id === nextProps.puzzle.id;
 });
 
 export default PuzzleCard;

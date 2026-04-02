@@ -11,11 +11,26 @@ function nextMiniBoardId() {
   return `mini-board-${miniBoardSeq}`;
 }
 
-const MiniBoard = memo(function MiniBoard({ fen, lightColor = '#F0D9B5', darkColor = '#B58863', orientation = 'white' }) {
+/**
+ * OPTIMIZED STATIC MINI BOARD
+ * - No animations
+ * - No dragging
+ * - Persistent rendering
+ * - Memoized to prevent re-renders
+ */
+const MiniBoard = memo(function MiniBoard({ 
+  fen, 
+  lightColor = '#F0D9B5', 
+  darkColor = '#B58863', 
+  orientation = 'white' 
+}) {
   const { pieceStyle } = useApp();
   const [boardId] = useState(() => nextMiniBoardId());
   const wrapRef = useRef(null);
   const [boardPx, setBoardPx] = useState(0);
+  
+  // Use ref to track if we've measured to avoid unnecessary updates
+  const hasMeasured = useRef(false);
 
   useEffect(() => {
     const el = wrapRef.current;
@@ -23,7 +38,10 @@ const MiniBoard = memo(function MiniBoard({ fen, lightColor = '#F0D9B5', darkCol
 
     const measure = () => {
       const w = Math.floor(el.getBoundingClientRect().width);
-      if (w > 0) setBoardPx(w);
+      if (w > 0 && (!hasMeasured.current || Math.abs(boardPx - w) > 5)) {
+        setBoardPx(w);
+        hasMeasured.current = true;
+      }
     };
 
     measure();
@@ -32,10 +50,17 @@ const MiniBoard = memo(function MiniBoard({ fen, lightColor = '#F0D9B5', darkCol
     const ro = new ResizeObserver(() => measure());
     ro.observe(el);
     return () => ro.disconnect();
-  }, []);
+  }, [boardPx]);
 
   const squarePx = useMemo(() => Math.max(1, Math.floor(boardPx / 8)), [boardPx]);
   const pieces = useMemo(() => getPieceRenderers(pieceStyle, squarePx), [pieceStyle, squarePx]);
+  
+  // Memoize position to ensure stable reference
+  const position = useMemo(() => fen || START_POSITION, [fen]);
+  
+  // Memoize square styles to prevent re-creation
+  const darkSquareStyle = useMemo(() => ({ backgroundColor: darkColor }), [darkColor]);
+  const lightSquareStyle = useMemo(() => ({ backgroundColor: lightColor }), [lightColor]);
 
   return (
     <div
@@ -47,18 +72,28 @@ const MiniBoard = memo(function MiniBoard({ fen, lightColor = '#F0D9B5', darkCol
       {boardPx > 0 && (
         <Chessboard
           id={boardId}
-          position={fen || START_POSITION}
+          position={position}
           boardOrientation={orientation}
           arePiecesDraggable={false}
+          areArrowsAllowed={false}
           showBoardNotation={false}
           animationDuration={0}
-          customDarkSquareStyle={{ backgroundColor: darkColor }}
-          customLightSquareStyle={{ backgroundColor: lightColor }}
+          customDarkSquareStyle={darkSquareStyle}
+          customLightSquareStyle={lightSquareStyle}
           customPieces={pieces}
         />
       )}
     </div>
   );
+}, (prevProps, nextProps) => {
+  // Custom comparison: only re-render if critical props change
+  return (
+    prevProps.fen === nextProps.fen &&
+    prevProps.orientation === nextProps.orientation &&
+    prevProps.lightColor === nextProps.lightColor &&
+    prevProps.darkColor === nextProps.darkColor
+  );
 });
 
 export default MiniBoard;
+

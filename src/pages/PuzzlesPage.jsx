@@ -1,17 +1,24 @@
-import React, { useState, useMemo, useLayoutEffect, useRef } from 'react';
+import React, { useState, useMemo, useLayoutEffect, useRef, useEffect } from 'react';
 import { HiSearch, HiRefresh, HiFilter } from 'react-icons/hi';
 import PuzzleCard from '../components/PuzzleCard.jsx';
 import { PUZZLES, PUZZLE_CATEGORIES, PUZZLE_DIFFICULTIES } from '../data/puzzles.js';
+import puzzleCacheStore from '../stores/puzzleCache.js';
 
 export default function PuzzlesPage() {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('All');
   const [difficulty, setDifficulty] = useState('All');
   
+  // Preload cache on mount (runs once)
+  useEffect(() => {
+    puzzleCacheStore.preloadPuzzles(PUZZLES);
+  }, []);
+  
   // ZERO-FLASH LAYOUT LOGIC
   const [layoutReady, setLayoutReady] = useState(false);
   const containerRef = useRef(null);
 
+  // Memoize filtered puzzles to prevent re-creation
   const filteredPuzzles = useMemo(() => {
     return PUZZLES.filter(p => {
       const matchesQuery = p.category.toLowerCase().includes(query.toLowerCase()) ||
@@ -103,7 +110,10 @@ export default function PuzzlesPage() {
           }}
         >
           {filteredPuzzles.map((puzzle) => (
-            <PuzzleCard key={puzzle.id} puzzle={puzzle} />
+            <PuzzleCard 
+              key={puzzle.id} 
+              puzzle={puzzle}
+            />
           ))}
         </div>
       )}
