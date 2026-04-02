@@ -850,6 +850,14 @@ select {
   min-height: 260px;
 }
 
+.card-board-area .mini-board > div,
+.card-board-area .preview-board > div,
+.puzzle-card-board .preview-board > div {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
 .puzzle-card-board {
   position: relative;
   width: 100%;
