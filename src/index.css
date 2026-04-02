@@ -848,6 +848,9 @@ select {
   width: 100%;
   height: 100%;
   min-height: 260px;
+  overflow: hidden;
+  line-height: 0;
+  transform: translateZ(0);
 }
 
 .card-board-area .mini-board > div,
@@ -856,6 +859,13 @@ select {
   border: none !important;
   outline: none !important;
   box-shadow: none !important;
+  height: 100% !important;
+}
+
+.card-board-area .mini-board img,
+.card-board-area .preview-board img,
+.puzzle-card-board .preview-board img {
+  display: block;
 }
 
 .puzzle-card-board {
@@ -863,7 +873,7 @@ select {
   width: 100%;
   aspect-ratio: 1;
   background: var(--bg-elevated, #1a1a1a);
-  overflow: visible;
+  overflow: hidden;
   contain: layout;
   min-height: 260px;
 }
@@ -872,6 +882,9 @@ select {
   width: 100%;
   height: 100%;
   min-height: 260px;
+  overflow: hidden;
+  line-height: 0;
+  transform: translateZ(0);
 }
 
 .card-difficulty-badge {
