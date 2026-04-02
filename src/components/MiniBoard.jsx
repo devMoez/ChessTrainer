@@ -12,23 +12,51 @@ function nextMiniBoardId() {
 }
 
 /**
+ * Validate FEN string format
+ */
+function isValidFen(fen) {
+  if (!fen || typeof fen !== 'string') return false;
+  const parts = fen.trim().split(/\s+/);
+  // Basic validation: should have at least board position part
+  return parts.length >= 1 && parts[0].split('/').length === 8;
+}
+
+/**
  * OPTIMIZED STATIC MINI BOARD
- * - No animations
- * - No dragging
- * - Persistent rendering
+ * 
+ * Key Features:
+ * - NO animations (animationDuration: 0)
+ * - NO dragging (arePiecesDraggable: false)
+ * - NO arrows (areArrowsAllowed: false)
+ * - Persistent rendering (stable board ID)
  * - Memoized to prevent re-renders
+ * - FEN validation before render
+ * - Skeleton placeholder if FEN not ready
+ * 
+ * Performance:
+ * - Renders only when FEN/colors change
+ * - Stable piece renderers (memoized by size)
+ * - ResizeObserver for efficient sizing
+ * - CSS containment for layout isolation
  */
 const MiniBoard = memo(function MiniBoard({ 
   fen, 
   lightColor = '#F0D9B5', 
   darkColor = '#B58863', 
-  orientation = 'white' 
+  orientation = 'white',
+  showSkeleton = true // Show skeleton if FEN invalid/missing
 }) {
   const { pieceStyle } = useApp();
   const [boardId] = useState(() => nextMiniBoardId());
   const wrapRef = useRef(null);
   const [boardPx, setBoardPx] = useState(0);
   const previousWidth = useRef(0);
+  
+  // Validate FEN
+  const validFen = useMemo(() => {
+    if (!fen) return null;
+    return isValidFen(fen) ? fen : null;
+  }, [fen]);
 
   useEffect(() => {
     const el = wrapRef.current;
@@ -63,23 +91,56 @@ const MiniBoard = memo(function MiniBoard({
   }, []);
 
   const squarePx = useMemo(() => Math.max(1, Math.floor(boardPx / 8)), [boardPx]);
-  const pieces = useMemo(() => getPieceRenderers(pieceStyle, squarePx), [pieceStyle, squarePx]);
   
-  // Memoize position to ensure stable reference
-  const position = useMemo(() => fen || START_POSITION, [fen]);
+  // Memoize piece renderers - cached by piece style and size
+  // This prevents re-creating piece SVGs on every render
+  const pieces = useMemo(() => {
+    if (boardPx === 0) return null;
+    return getPieceRenderers(pieceStyle, squarePx);
+  }, [pieceStyle, squarePx]);
   
-  // Memoize square styles to prevent re-creation
+  // Use validated FEN or fallback to start position
+  const position = useMemo(() => validFen || START_POSITION, [validFen]);
+  
+  // Memoize square styles to prevent object re-creation
   const darkSquareStyle = useMemo(() => ({ backgroundColor: darkColor }), [darkColor]);
   const lightSquareStyle = useMemo(() => ({ backgroundColor: lightColor }), [lightColor]);
+
+  // Show skeleton if FEN is invalid and skeleton is enabled
+  const shouldShowSkeleton = showSkeleton && !validFen && fen;
 
   return (
     <div
       ref={wrapRef}
       className="mini-board"
-      style={{ width: '100%', aspectRatio: '1', pointerEvents: 'none', userSelect: 'none' }}
+      style={{ 
+        width: '100%', 
+        aspectRatio: '1', 
+        pointerEvents: 'none', 
+        userSelect: 'none',
+        contain: 'layout style paint', // CSS containment for performance
+        position: 'relative'
+      }}
       aria-hidden="true"
     >
-      {boardPx > 0 && (
+      {shouldShowSkeleton ? (
+        // Skeleton placeholder for invalid FEN
+        <div style={{
+          width: '100%',
+          height: '100%',
+          background: `linear-gradient(45deg, ${lightColor} 25%, ${darkColor} 25%, ${darkColor} 50%, ${lightColor} 50%, ${lightColor} 75%, ${darkColor} 75%, ${darkColor})`,
+          backgroundSize: '28.28% 28.28%',
+          opacity: 0.3,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          fontSize: '12px',
+          color: 'var(--text-muted)'
+        }}>
+          Loading...
+        </div>
+      ) : boardPx > 0 && pieces ? (
+        // Render actual board with valid FEN
         <Chessboard
           id={boardId}
           position={position}
@@ -92,7 +153,7 @@ const MiniBoard = memo(function MiniBoard({
           customLightSquareStyle={lightSquareStyle}
           customPieces={pieces}
         />
-      )}
+      ) : null}
     </div>
   );
 }, (prevProps, nextProps) => {

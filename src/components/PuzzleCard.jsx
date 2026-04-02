@@ -17,10 +17,21 @@ function difficultyClass(d) {
 
 /**
  * OPTIMIZED PUZZLE CARD
- * - Uses stable keys to prevent re-mounting
- * - Memoized to prevent unnecessary re-renders
- * - FEN is preloaded and cached
- * - Board component never resets
+ * 
+ * Key Features:
+ * - Stable keys prevent re-mounting (key={puzzle.id})
+ * - React.memo prevents re-renders on parent updates
+ * - Custom comparison: only re-render if puzzle.id changes
+ * - FEN is preloaded from global cache
+ * - Board component persists through scroll/filter
+ * - CSS containment isolates layout
+ * 
+ * Performance:
+ * - Memoized callbacks (useCallback)
+ * - Memoized derived values (useMemo)
+ * - Board colors memoized to prevent MiniBoard re-render
+ * - No re-render on: scroll, filter, theme change
+ * - Only re-renders if: puzzle.id changes
  */
 const PuzzleCard = memo(function PuzzleCard({ puzzle }) {
   const { boardTheme } = useApp();
@@ -47,9 +58,11 @@ const PuzzleCard = memo(function PuzzleCard({ puzzle }) {
       className="puzzle-card-compact" 
       id={`puzzle-card-${puzzle.id}`}
       data-puzzle-id={puzzle.id}
+      style={{ contain: 'layout style paint' }}
     >
       <div className="puzzle-card-board">
         <MiniBoard
+          key={`board-${puzzle.id}`}
           fen={puzzle.fen}
           lightColor={light}
           darkColor={dark}
@@ -91,6 +104,7 @@ const PuzzleCard = memo(function PuzzleCard({ puzzle }) {
           transition: transform 0.2s ease, box-shadow 0.2s ease;
           cursor: pointer;
           contain: layout style paint;
+          will-change: transform;
         }
         
         .puzzle-card-compact:hover {

@@ -1,15 +1,20 @@
 import React, { useState, useMemo, useLayoutEffect, useRef, useEffect } from 'react';
 import { HiSearch, HiRefresh, HiFilter } from 'react-icons/hi';
 import PuzzleCard from '../components/PuzzleCard.jsx';
+import PuzzleCardSkeleton from '../components/PuzzleCardSkeleton.jsx';
 import { PUZZLES, PUZZLE_CATEGORIES, PUZZLE_DIFFICULTIES } from '../data/puzzles.js';
 import puzzleCacheStore from '../stores/puzzleCache.js';
+import { usePuzzleCache } from '../hooks/usePuzzleCache.js';
 
 export default function PuzzlesPage() {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('All');
   const [difficulty, setDifficulty] = useState('All');
   
-  // Preload cache on mount (runs once)
+  // Get cache status
+  const { isReady } = usePuzzleCache();
+  
+  // Preload cache on mount (runs once, idempotent)
   useEffect(() => {
     puzzleCacheStore.preloadPuzzles(PUZZLES);
   }, []);
@@ -98,7 +103,18 @@ export default function PuzzlesPage() {
             setDifficulty('All');
           }}>Clear Filters</button>
         </div>
+      ) : !isReady ? (
+        // Show skeletons while cache is loading
+        <div 
+          className="puzzle-grid-compact"
+          style={{ minHeight: '600px' }}
+        >
+          {Array.from({ length: 8 }).map((_, i) => (
+            <PuzzleCardSkeleton key={`skeleton-${i}`} />
+          ))}
+        </div>
       ) : (
+        // Show actual puzzle cards once cache is ready
         <div 
           className="puzzle-grid-compact"
           ref={containerRef}
