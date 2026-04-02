@@ -838,12 +838,32 @@ select {
   position: relative;
   background: #1a1a1a;
   aspect-ratio: 1;
-  overflow: hidden;
+  overflow: visible;
+  min-height: 260px;
+  width: 100%;
 }
 
-.card-board-area .mini-board {
+.card-board-area .mini-board,
+.card-board-area .preview-board {
   width: 100%;
   height: 100%;
+  min-height: 260px;
+}
+
+.puzzle-card-board {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  background: var(--bg-elevated, #1a1a1a);
+  overflow: visible;
+  contain: layout;
+  min-height: 260px;
+}
+
+.puzzle-card-board .preview-board {
+  width: 100%;
+  height: 100%;
+  min-height: 260px;
 }
 
 .card-difficulty-badge {

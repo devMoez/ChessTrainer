@@ -1,4 +1,4 @@
-import React, { memo, useCallback } from 'react';
+import React, { memo, useCallback, useEffect } from 'react';
 import PreviewBoard from './PreviewBoard.jsx';
 import { HiTrendingUp, HiStar } from 'react-icons/hi';
 import { useApp } from '../context/AppContext.jsx';
@@ -15,6 +15,18 @@ function difficultyClass(d) {
 
 const OpeningCard = memo(function OpeningCard({ opening, onClick, highlighted = false }) {
   const { boardTheme } = useApp();
+
+  // Debug logging
+  useEffect(() => {
+    if (import.meta.env.DEV) {
+      console.log('[OpeningCard] Rendering:', { 
+        id: opening.id, 
+        name: opening.name,
+        fen: opening.fen,
+        hasFen: !!opening.fen 
+      });
+    }
+  }, [opening.id, opening.fen, opening.name]);
 
   const handleClick = useCallback(() => {
     onClick?.(opening);

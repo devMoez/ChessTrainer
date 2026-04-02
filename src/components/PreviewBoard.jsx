@@ -58,7 +58,7 @@ const PreviewBoard = memo(function PreviewBoard({
   const { pieceStyle, boardTheme } = useApp();
   const [boardId] = useState(() => nextBoardId());
   const wrapRef = useRef(null);
-  const [boardPx, setBoardPx] = useState(0);
+  const [boardPx, setBoardPx] = useState(300); // Default to 300px instead of 0
   const previousWidth = useRef(0);
   
   // Use custom colors or default to theme
@@ -67,9 +67,23 @@ const PreviewBoard = memo(function PreviewBoard({
   
   // Validate FEN
   const validFen = useMemo(() => {
-    if (!fen) return null;
-    return isValidFen(fen) ? fen : null;
+    if (!fen) {
+      console.warn('[PreviewBoard] No FEN provided');
+      return null;
+    }
+    const valid = isValidFen(fen);
+    if (!valid) {
+      console.warn('[PreviewBoard] Invalid FEN:', fen);
+    }
+    return valid ? fen : null;
   }, [fen]);
+  
+  // Debug logging
+  useEffect(() => {
+    if (import.meta.env.DEV) {
+      console.log('[PreviewBoard] Mounted:', { fen, validFen, boardPx });
+    }
+  }, []);
 
   // Efficient resize observer
   useEffect(() => {
@@ -103,8 +117,8 @@ const PreviewBoard = memo(function PreviewBoard({
   const squarePx = useMemo(() => Math.max(1, Math.floor(boardPx / 8)), [boardPx]);
   
   // Memoized piece renderers - cached by piece style and size
+  // Always generate pieces, even with default size
   const pieces = useMemo(() => {
-    if (boardPx === 0) return null;
     return getPieceRenderers(pieceStyle, squarePx);
   }, [pieceStyle, squarePx]);
   
@@ -124,6 +138,8 @@ const PreviewBoard = memo(function PreviewBoard({
       className={`preview-board ${className}`}
       style={{ 
         width: '100%', 
+        height: '100%',
+        minHeight: '260px',
         aspectRatio: '1', 
         pointerEvents: 'none', 
         userSelect: 'none',
@@ -147,7 +163,7 @@ const PreviewBoard = memo(function PreviewBoard({
         }}>
           Loading...
         </div>
-      ) : boardPx > 0 && pieces ? (
+      ) : (
         <Chessboard
           id={boardId}
           position={position}
@@ -160,7 +176,7 @@ const PreviewBoard = memo(function PreviewBoard({
           customLightSquareStyle={lightSquareStyle}
           customPieces={pieces}
         />
-      ) : null}
+      )}
     </div>
   );
 }, (prevProps, nextProps) => {

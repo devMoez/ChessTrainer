@@ -24,22 +24,37 @@ import { PUZZLES_BY_CATEGORY } from '../data/puzzles.js';
  */
 export function useCacheInitializer() {
   useEffect(() => {
+    console.log('[CacheInitializer] Starting cache preload...');
+    
     // Preload openings
     if (!openingCacheStore.isReady()) {
+      console.log('[CacheInitializer] Preloading', OPENINGS.length, 'openings');
       openingCacheStore.preloadOpenings(OPENINGS);
+    } else {
+      console.log('[CacheInitializer] Opening cache already ready');
     }
 
     // Preload puzzles - flatten all categories
     if (!puzzleCacheStore.isReady()) {
       const allPuzzles = Object.values(PUZZLES_BY_CATEGORY).flat();
+      console.log('[CacheInitializer] Preloading', allPuzzles.length, 'puzzles');
       puzzleCacheStore.preloadPuzzles(allPuzzles);
+    } else {
+      console.log('[CacheInitializer] Puzzle cache already ready');
     }
 
     // Log cache statistics in development
-    if (import.meta.env.DEV) {
+    setTimeout(() => {
       console.log('[Cache] Opening stats:', openingCacheStore.getStats());
       console.log('[Cache] Puzzle stats:', puzzleCacheStore.getStats());
-    }
+      
+      // Test a few FENs
+      const testOpening = openingCacheStore.getOpening('ruy-lopez-main');
+      console.log('[Cache] Test opening (ruy-lopez-main):', testOpening);
+      
+      const testPuzzle = puzzleCacheStore.getPuzzle('m1-001');
+      console.log('[Cache] Test puzzle (m1-001):', testPuzzle);
+    }, 100);
   }, []);
 }
 

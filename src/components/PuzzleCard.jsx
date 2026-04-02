@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useMemo } from 'react';
+import React, { memo, useCallback, useMemo, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PreviewBoard from './PreviewBoard.jsx';
 import { useApp } from '../context/AppContext.jsx';
@@ -36,6 +36,18 @@ function difficultyClass(d) {
 const PuzzleCard = memo(function PuzzleCard({ puzzle }) {
   const { boardTheme } = useApp();
   const navigate = useNavigate();
+
+  // Debug logging
+  useEffect(() => {
+    if (import.meta.env.DEV) {
+      console.log('[PuzzleCard] Rendering:', { 
+        id: puzzle.id, 
+        category: puzzle.category,
+        fen: puzzle.fen,
+        hasFen: !!puzzle.fen 
+      });
+    }
+  }, [puzzle.id, puzzle.fen, puzzle.category]);
 
   // Memoize colors to prevent MiniBoard re-renders
   const { light, dark } = useMemo(() => ({
