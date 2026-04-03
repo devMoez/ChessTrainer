@@ -902,7 +902,8 @@ select {
   aspect-ratio: 1;
   overflow: hidden;
   line-height: 0;
-  transform: translateZ(0);
+  transform: translateZ(0) scale(1.01);
+  transform-origin: center center;
 }
 
 .card-board-area .mini-board > div {
