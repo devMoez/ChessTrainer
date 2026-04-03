@@ -15,9 +15,6 @@ function difficultyClass(d) {
 
 const OpeningCard = memo(function OpeningCard({ opening, onClick, highlighted = false }) {
   const { boardTheme } = useApp();
-  
-  // Debug confirmation
-  console.log("Opening preview restored:", opening.fen);
 
   const handleClick = useCallback(() => {
     onClick?.(opening);
