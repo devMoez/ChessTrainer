@@ -150,6 +150,10 @@ const MiniBoard = memo(function MiniBoard({
           customDarkSquareStyle={darkSquareStyle}
           customLightSquareStyle={lightSquareStyle}
           customPieces={pieces}
+          boardStyle={{
+            border: "none",
+            boxShadow: "none"
+          }}
         />
       )}
     </div>
