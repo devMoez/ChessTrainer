@@ -391,16 +391,17 @@ function StudyModal({ opening, onClose, onPlay, boardTheme }) {
           boxShadow: 'var(--shadow-lg)'
         }}>
           <Chessboard
-            options={{
-              id: `study-board-${opening.id}`,
-              position: opening.fen,
-              boardOrientation: opening.color?.toLowerCase() === 'black' ? 'black' : 'white',
-              allowDragging: false,
-              showNotation: false,
-              showAnimations: false,
-              allowDrawingArrows: false,
-              lightSquareStyle: { backgroundColor: boardTheme.light },
-              darkSquareStyle: { backgroundColor: boardTheme.dark },
+            id={`study-board-${opening.id}`}
+            position={opening.fen || 'start'}
+            boardOrientation={opening.color?.toLowerCase() === 'black' ? 'black' : 'white'}
+            arePiecesDraggable={false}
+            showBoardNotation={false}
+            animationDuration={0}
+            customDarkSquareStyle={{ backgroundColor: boardTheme.dark }}
+            customLightSquareStyle={{ backgroundColor: boardTheme.light }}
+            boardStyle={{
+              border: "none",
+              boxShadow: "none"
             }}
           />
         </div>
