@@ -147,6 +147,26 @@ select {
   font-family: inherit;
 }
 
+/* ---------- React Chessboard Global Fixes ---------- */
+/* Remove all white lines from chessboard elements */
+[class*="chessboard"] {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+[class*="chessboard"] * {
+  border: none !important;
+  outline: none !important;
+}
+
+[class*="chessboard"] img,
+[class*="chessboard"] svg {
+  display: block;
+  border: none;
+  outline: none;
+}
+
 /* ---------- Typography Scale ---------- */
 .h1 {
   font-size: 48px;
@@ -848,10 +868,25 @@ select {
   height: 100% !important;
   border: none !important;
   box-shadow: none !important;
+  outline: none !important;
+}
+
+.preview-board > div > div {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 .preview-board img {
   display: block;
+  border: none;
+  outline: none;
+}
+
+.preview-board svg {
+  display: block;
+  border: none;
+  outline: none;
 }
 
 .card-board-area {
@@ -874,10 +909,25 @@ select {
   height: 100% !important;
   border: none !important;
   box-shadow: none !important;
+  outline: none !important;
+}
+
+.card-board-area .mini-board > div > div {
+  border: none !important;
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 .card-board-area .mini-board img {
   display: block;
+  border: none;
+  outline: none;
+}
+
+.card-board-area .mini-board svg {
+  display: block;
+  border: none;
+  outline: none;
 }
 
 .puzzle-card-board {
