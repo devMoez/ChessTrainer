@@ -18,6 +18,134 @@ import MiniBoard from '../components/MiniBoard.jsx';
 import { filterOpenings, OPENINGS } from '../data/openings.js';
 import { useApp } from '../context/AppContext.jsx';
 
+function StudyModal({ opening, onClose, onPlay, boardTheme }) {
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
+  return (
+    <div
+      className="modal-backdrop"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="study-modal-title"
+      id="study-modal"
+    >
+      <div
+        className="modal-card"
+        onClick={(event) => event.stopPropagation()}
+        style={{ maxWidth: 520, textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 20, maxHeight: '90vh', overflowY: 'auto' }}
+      >
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--accent-gold)', marginBottom: 4 }}>
+              {opening.eco} / {opening.color} / {opening.difficulty}
+            </div>
+            <h2 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.2 }} id="study-modal-title">
+              {opening.name}
+            </h2>
+          </div>
+          <button
+            onClick={onClose}
+            style={{ color: 'var(--text-muted)', fontSize: 22, lineHeight: 1, padding: '2px 6px', background: 'none', border: 'none', cursor: 'pointer', borderRadius: 6 }}
+            aria-label="Close"
+            type="button"
+          >
+            x
+          </button>
+        </div>
+
+        <div style={{
+          width: '100%',
+          aspectRatio: '1',
+          borderRadius: 12,
+          overflow: 'hidden',
+          border: '1px solid var(--border)',
+          flexShrink: 0,
+          background: 'var(--bg-surface)',
+          position: 'relative',
+          boxShadow: 'var(--shadow-lg)'
+        }}>
+          <Chessboard
+            id={`study-board-${opening.id}`}
+            position={opening.fen || 'start'}
+            boardOrientation={opening.color?.toLowerCase() === 'black' ? 'black' : 'white'}
+            arePiecesDraggable={false}
+            showBoardNotation={false}
+            animationDuration={0}
+            customDarkSquareStyle={{ backgroundColor: boardTheme.dark }}
+            customLightSquareStyle={{ backgroundColor: boardTheme.light }}
+            boardStyle={{
+              border: "none",
+              boxShadow: "none"
+            }}
+          />
+        </div>
+
+        <div style={{
+          fontFamily: "'Roboto Mono', monospace",
+          fontSize: 14,
+          color: 'var(--accent-gold)',
+          background: 'var(--accent-gold-10)',
+          borderRadius: 8,
+          padding: '10px 14px',
+          border: '1px solid var(--accent-gold-20)',
+          overflowX: 'auto',
+          whiteSpace: 'nowrap'
+        }}>
+          {opening.moves}
+        </div>
+
+        <p style={{
+          fontSize: 14,
+          color: 'var(--text-secondary)',
+          lineHeight: 1.6,
+          margin: 0
+        }}>
+          {opening.description}
+        </p>
+
+        <div style={{ display: 'flex', gap: 24, padding: '4px 0' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
+            <HiTrendingUp style={{ color: 'var(--accent-green)', fontSize: 16 }} />
+            <span style={{ color: 'var(--accent-green)', fontWeight: 700 }}>{opening.winRate}%</span>
+            <span style={{ color: 'var(--text-secondary)', marginLeft: 4 }}>win rate</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
+            <HiStar style={{ color: 'var(--accent-gold)', fontSize: 16 }} />
+            <span style={{ color: 'var(--text-primary)', fontWeight: 700 }}>{opening.popularity}</span>
+            <span style={{ color: 'var(--text-secondary)', marginLeft: 4 }}>popularity</span>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          {opening.tags.map((tag) => (
+            <span key={tag} className="chip active" style={{ fontSize: 11 }}>{tag}</span>
+          ))}
+        </div>
+
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button
+            className="btn btn-primary"
+            style={{ flex: 1 }}
+            onClick={onPlay}
+            id="study-modal-play-btn"
+            type="button"
+          >
+            <HiPlay /> Play this Opening
+          </button>
+          <button className="btn btn-ghost" onClick={onClose} id="study-modal-close-btn" type="button">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const DIFFICULTY_FILTERS = ['All', 'Beginner', 'Intermediate', 'Advanced'];
 const COLOR_FILTERS = ['All', 'White', 'Black'];
 const PAGE_SIZE = 8;
@@ -335,134 +463,6 @@ export default function OpeningsPage() {
           </button>
         </div>
       ) : null}
-    </div>
-  );
-}
-
-function StudyModal({ opening, onClose, onPlay, boardTheme }) {
-  useEffect(() => {
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = prev; };
-  }, []);
-
-  return (
-    <div
-      className="modal-backdrop"
-      onClick={onClose}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="study-modal-title"
-      id="study-modal"
-    >
-      <div
-        className="modal-card"
-        onClick={(event) => event.stopPropagation()}
-        style={{ maxWidth: 520, textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 20, maxHeight: '90vh', overflowY: 'auto' }}
-      >
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-          <div>
-            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--accent-gold)', marginBottom: 4 }}>
-              {opening.eco} / {opening.color} / {opening.difficulty}
-            </div>
-            <h2 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.2 }} id="study-modal-title">
-              {opening.name}
-            </h2>
-          </div>
-          <button
-            onClick={onClose}
-            style={{ color: 'var(--text-muted)', fontSize: 22, lineHeight: 1, padding: '2px 6px', background: 'none', border: 'none', cursor: 'pointer', borderRadius: 6 }}
-            aria-label="Close"
-            type="button"
-          >
-            x
-          </button>
-        </div>
-
-        <div style={{
-          width: '100%',
-          aspectRatio: '1',
-          borderRadius: 12,
-          overflow: 'hidden',
-          border: '1px solid var(--border)',
-          flexShrink: 0,
-          background: 'var(--bg-surface)',
-          position: 'relative',
-          boxShadow: 'var(--shadow-lg)'
-        }}>
-          <Chessboard
-            id={`study-board-${opening.id}`}
-            position={opening.fen || 'start'}
-            boardOrientation={opening.color?.toLowerCase() === 'black' ? 'black' : 'white'}
-            arePiecesDraggable={false}
-            showBoardNotation={false}
-            animationDuration={0}
-            customDarkSquareStyle={{ backgroundColor: boardTheme.dark }}
-            customLightSquareStyle={{ backgroundColor: boardTheme.light }}
-            boardStyle={{
-              border: "none",
-              boxShadow: "none"
-            }}
-          />
-        </div>
-
-        <div style={{
-          fontFamily: "'Roboto Mono', monospace",
-          fontSize: 14,
-          color: 'var(--accent-gold)',
-          background: 'var(--accent-gold-10)',
-          borderRadius: 8,
-          padding: '10px 14px',
-          border: '1px solid var(--accent-gold-20)',
-          overflowX: 'auto',
-          whiteSpace: 'nowrap'
-        }}>
-          {opening.moves}
-        </div>
-
-        <p style={{
-          fontSize: 14,
-          color: 'var(--text-secondary)',
-          lineHeight: 1.6,
-          margin: 0
-        }}>
-          {opening.description}
-        </p>
-
-        <div style={{ display: 'flex', gap: 24, padding: '4px 0' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
-            <HiTrendingUp style={{ color: 'var(--accent-green)', fontSize: 16 }} />
-            <span style={{ color: 'var(--accent-green)', fontWeight: 700 }}>{opening.winRate}%</span>
-            <span style={{ color: 'var(--text-secondary)', marginLeft: 4 }}>win rate</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
-            <HiStar style={{ color: 'var(--accent-gold)', fontSize: 16 }} />
-            <span style={{ color: 'var(--text-primary)', fontWeight: 700 }}>{opening.popularity}</span>
-            <span style={{ color: 'var(--text-secondary)', marginLeft: 4 }}>popularity</span>
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-          {opening.tags.map((tag) => (
-            <span key={tag} className="chip active" style={{ fontSize: 11 }}>{tag}</span>
-          ))}
-        </div>
-
-        <div style={{ display: 'flex', gap: 10 }}>
-          <button
-            className="btn btn-primary"
-            style={{ flex: 1 }}
-            onClick={onPlay}
-            id="study-modal-play-btn"
-            type="button"
-          >
-            <HiPlay /> Play this Opening
-          </button>
-          <button className="btn btn-ghost" onClick={onClose} id="study-modal-close-btn" type="button">
-            Close
-          </button>
-        </div>
-      </div>
     </div>
   );
 }
