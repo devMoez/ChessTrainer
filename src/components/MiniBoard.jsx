@@ -49,7 +49,7 @@ const MiniBoard = memo(function MiniBoard({
   const { pieceStyle } = useApp();
   const [boardId] = useState(() => nextMiniBoardId());
   const wrapRef = useRef(null);
-  const [boardPx, setBoardPx] = useState(0);
+  const [boardPx, setBoardPx] = useState(300); // Default 300px for instant render
   const previousWidth = useRef(0);
   
   // Validate FEN
@@ -92,10 +92,8 @@ const MiniBoard = memo(function MiniBoard({
 
   const squarePx = useMemo(() => Math.max(1, Math.floor(boardPx / 8)), [boardPx]);
   
-  // Memoize piece renderers - cached by piece style and size
-  // This prevents re-creating piece SVGs on every render
+  // Memoize piece renderers - always generate
   const pieces = useMemo(() => {
-    if (boardPx === 0) return null;
     return getPieceRenderers(pieceStyle, squarePx);
   }, [pieceStyle, squarePx]);
   
@@ -114,17 +112,18 @@ const MiniBoard = memo(function MiniBoard({
       ref={wrapRef}
       className="mini-board"
       style={{ 
-        width: '100%', 
+        width: '100%',
+        height: '100%',
+        minHeight: '260px',
         aspectRatio: '1', 
         pointerEvents: 'none', 
         userSelect: 'none',
-        contain: 'layout style paint', // CSS containment for performance
+        contain: 'layout style paint',
         position: 'relative'
       }}
       aria-hidden="true"
     >
       {shouldShowSkeleton ? (
-        // Skeleton placeholder for invalid FEN
         <div style={{
           width: '100%',
           height: '100%',
@@ -139,8 +138,7 @@ const MiniBoard = memo(function MiniBoard({
         }}>
           Loading...
         </div>
-      ) : boardPx > 0 && pieces ? (
-        // Render actual board with valid FEN
+      ) : (
         <Chessboard
           id={boardId}
           position={position}
@@ -153,7 +151,7 @@ const MiniBoard = memo(function MiniBoard({
           customLightSquareStyle={lightSquareStyle}
           customPieces={pieces}
         />
-      ) : null}
+      )}
     </div>
   );
 }, (prevProps, nextProps) => {
