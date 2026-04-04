@@ -174,7 +174,7 @@ const PreviewBoard = memo(function PreviewBoard({
           animationDuration={0}
           customDarkSquareStyle={darkSquareStyle}
           customLightSquareStyle={lightSquareStyle}
-          customPieces={pieces}
+          {...(pieces && { customPieces: pieces })}
         />
       )}
     </div>

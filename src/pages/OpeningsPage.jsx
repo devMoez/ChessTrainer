@@ -7,16 +7,149 @@ import React, {
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { Chessboard } from 'react-chessboard';
 import {
-  HiPlay,
-  HiSearch,
-  HiStar,
-  HiTrendingUp,
-  HiX,
-} from 'react-icons/hi';
+  Play,
+  Search,
+  Star,
+  TrendingUp,
+  X,
+  ChevronLeft,
+  ChevronRight,
+} from 'lucide-react';
 import OpeningCard from '../components/OpeningCard.jsx';
 import MiniBoard from '../components/MiniBoard.jsx';
 import { filterOpenings, OPENINGS } from '../data/openings.js';
 import { useApp } from '../context/AppContext.jsx';
+
+// Move StudyModal to the top to ensure it is defined before use
+function StudyModal({ opening, onClose, onPlay, boardTheme }) {
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.body.style.overflow = prev; };
+  }, []);
+
+  if (!opening) return null;
+
+  return (
+    <div
+      className="modal-backdrop"
+      onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="study-modal-title"
+      id="study-modal"
+    >
+      <div
+        className="modal-card"
+        onClick={(event) => event.stopPropagation()}
+        style={{ maxWidth: 520, textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 20, maxHeight: '90vh', overflowY: 'auto' }}
+      >
+        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--accent-gold)', marginBottom: 4 }}>
+              {opening.eco} / {opening.color} / {opening.difficulty}
+            </div>
+            <h2 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.2 }} id="study-modal-title">
+              {opening.name}
+            </h2>
+          </div>
+          <button
+            onClick={onClose}
+            style={{ color: 'var(--text-muted)', fontSize: 22, lineHeight: 1, padding: '2px 6px', background: 'none', border: 'none', cursor: 'pointer', borderRadius: 6 }}
+            aria-label="Close"
+            type="button"
+          >
+            <X size={20} />
+          </button>
+        </div>
+
+        <div style={{
+          width: '100%',
+          aspectRatio: '1',
+          borderRadius: 12,
+          overflow: 'hidden',
+          border: '1px solid var(--border)',
+          flexShrink: 0,
+          background: 'var(--bg-surface)',
+          position: 'relative',
+          boxShadow: 'var(--shadow-lg)'
+        }}>
+          <Chessboard
+            id={`study-board-${opening.id}`}
+            position={opening.fen || 'start'}
+            boardOrientation={opening.color?.toLowerCase() === 'black' ? 'black' : 'white'}
+            arePiecesDraggable={false}
+            showBoardNotation={false}
+            animationDuration={0}
+            customDarkSquareStyle={{ backgroundColor: boardTheme.dark }}
+            customLightSquareStyle={{ backgroundColor: boardTheme.light }}
+            boardStyle={{
+              border: "none",
+              boxShadow: "none"
+            }}
+          />
+        </div>
+
+        <div style={{
+          fontFamily: "'Roboto Mono', monospace",
+          fontSize: 14,
+          color: 'var(--accent-gold)',
+          background: 'var(--accent-gold-10)',
+          borderRadius: 8,
+          padding: '10px 14px',
+          border: '1px solid var(--accent-gold-20)',
+          overflowX: 'auto',
+          whiteSpace: 'nowrap'
+        }}>
+          {opening.moves}
+        </div>
+
+        <p style={{
+          fontSize: 14,
+          color: 'var(--text-secondary)',
+          lineHeight: 1.6,
+          margin: 0
+        }}>
+          {opening.description}
+        </p>
+
+        <div style={{ display: 'flex', gap: 24, padding: '4px 0' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
+            <TrendingUp style={{ color: 'var(--accent-green)', fontSize: 16 }} />
+            <span style={{ color: 'var(--accent-green)', fontWeight: 700 }}>{opening.winRate}%</span>
+            <span style={{ color: 'var(--text-secondary)', marginLeft: 4 }}>win rate</span>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
+            <Star style={{ color: 'var(--accent-gold)', fontSize: 16 }} />
+            <span style={{ color: 'var(--text-primary)', fontWeight: 700 }}>{opening.popularity}</span>
+            <span style={{ color: 'var(--text-secondary)', marginLeft: 4 }}>popularity</span>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+          {opening.tags?.map((tag) => (
+            <span key={tag} className="chip active" style={{ fontSize: 11 }}>{tag}</span>
+          ))}
+        </div>
+
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button
+            className="btn btn-primary"
+            style={{ flex: 1 }}
+            onClick={onPlay}
+            id="study-modal-play-btn"
+            type="button"
+          >
+            <Play size={18} /> Play this Opening
+          </button>
+          <button className="btn btn-ghost" onClick={onClose} id="study-modal-close-btn" type="button">
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 const DIFFICULTY_FILTERS = ['All', 'Beginner', 'Intermediate', 'Advanced'];
 const COLOR_FILTERS = ['All', 'White', 'Black'];
@@ -61,16 +194,20 @@ export default function OpeningsPage() {
     [debouncedQuery]
   );
 
-  const filtered = useMemo(() => searchedOpenings.filter((opening) => {
-    const matchesDifficulty = difficulty === 'All' || opening.difficulty === difficulty;
-    const matchesColor = colorFilter === 'All' || opening.color === colorFilter;
-    return matchesDifficulty && matchesColor;
-  }), [colorFilter, difficulty, searchedOpenings]);
+  const filtered = useMemo(() => {
+    if (!searchedOpenings) return [];
+    return searchedOpenings.filter((opening) => {
+      if (!opening) return false;
+      const matchesDifficulty = difficulty === 'All' || opening.difficulty === difficulty;
+      const matchesColor = colorFilter === 'All' || opening.color === colorFilter;
+      return matchesDifficulty && matchesColor;
+    });
+  }, [colorFilter, difficulty, searchedOpenings]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const activePage = Math.min(page, totalPages);
   const focusIndex = focusOpeningId
-    ? filtered.findIndex((opening) => opening.id === focusOpeningId)
+    ? filtered.findIndex((opening) => opening?.id === focusOpeningId)
     : -1;
   const focusPage = focusIndex === -1 ? null : Math.floor(focusIndex / PAGE_SIZE) + 1;
   const pendingFocus = Boolean(focusOpeningId && lastHighlightKeyRef.current !== focusKey);
@@ -115,7 +252,7 @@ export default function OpeningsPage() {
     if (pendingFocus) return null;
     if (selectedOpening) return selectedOpening;
     const studyId = searchParams.get('study');
-    return studyId ? (OPENINGS.find((opening) => opening.id === studyId) ?? null) : null;
+    return studyId ? (OPENINGS.find((opening) => opening?.id === studyId) ?? null) : null;
   }, [pendingFocus, searchParams, selectedOpening]);
 
   function updateSearchParam({ q, level, color, study } = {}) {
@@ -207,7 +344,7 @@ export default function OpeningsPage() {
 
       <div className="filter-bar">
         <div className="filter-search">
-          <HiSearch size={16} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
+          <Search size={16} style={{ color: 'var(--text-muted)', flexShrink: 0 }} />
           <input
             type="search"
             placeholder="Search openings..."
@@ -233,7 +370,7 @@ export default function OpeningsPage() {
               aria-label="Clear search"
               type="button"
             >
-              <HiX size={14} />
+              <X size={14} />
             </button>
           ) : null}
         </div>
@@ -273,7 +410,7 @@ export default function OpeningsPage() {
 
       {paginated.length === 0 ? (
         <div className="card-placeholder" style={{ minHeight: 300 }}>
-          <span className="placeholder-icon">Search</span>
+          <Search size={48} style={{ color: 'var(--text-muted)', marginBottom: 16, opacity: 0.5 }} />
           <p>No openings found for "{debouncedQuery || query}"</p>
           <button className="btn btn-ghost btn-sm" onClick={handleClearFilters} type="button">
             Clear filters
@@ -281,14 +418,17 @@ export default function OpeningsPage() {
         </div>
       ) : (
         <div className="grid-4">
-          {paginated.map((opening) => (
-            <OpeningCard
-              key={opening.id}
-              opening={opening}
-              onClick={handleCardClick}
-              highlighted={highlightedOpeningId === opening.id}
-            />
-          ))}
+          {paginated.map((opening) => {
+            if (!opening) return null;
+            return (
+              <OpeningCard
+                key={opening.id}
+                opening={opening}
+                onClick={handleCardClick}
+                highlighted={highlightedOpeningId === opening.id}
+              />
+            );
+          })}
         </div>
       )}
 
@@ -302,7 +442,7 @@ export default function OpeningsPage() {
             id="pagination-prev"
             type="button"
           >
-            {'<'}
+            <ChevronLeft size={16} />
           </button>
 
           {pageNumbers().map((item, index) => (
@@ -331,138 +471,10 @@ export default function OpeningsPage() {
             id="pagination-next"
             type="button"
           >
-            {'>'}
+            <ChevronRight size={16} />
           </button>
         </div>
       ) : null}
-    </div>
-  );
-}
-
-function StudyModal({ opening, onClose, onPlay, boardTheme }) {
-  useEffect(() => {
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => { document.body.style.overflow = prev; };
-  }, []);
-
-  return (
-    <div
-      className="modal-backdrop"
-      onClick={onClose}
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="study-modal-title"
-      id="study-modal"
-    >
-      <div
-        className="modal-card"
-        onClick={(event) => event.stopPropagation()}
-        style={{ maxWidth: 520, textAlign: 'left', display: 'flex', flexDirection: 'column', gap: 20, maxHeight: '90vh', overflowY: 'auto' }}
-      >
-        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
-          <div>
-            <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--accent-gold)', marginBottom: 4 }}>
-              {opening.eco} / {opening.color} / {opening.difficulty}
-            </div>
-            <h2 style={{ fontSize: 22, fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1.2 }} id="study-modal-title">
-              {opening.name}
-            </h2>
-          </div>
-          <button
-            onClick={onClose}
-            style={{ color: 'var(--text-muted)', fontSize: 22, lineHeight: 1, padding: '2px 6px', background: 'none', border: 'none', cursor: 'pointer', borderRadius: 6 }}
-            aria-label="Close"
-            type="button"
-          >
-            x
-          </button>
-        </div>
-
-        <div style={{
-          width: '100%',
-          aspectRatio: '1',
-          borderRadius: 12,
-          overflow: 'hidden',
-          border: '1px solid var(--border)',
-          flexShrink: 0,
-          background: 'var(--bg-surface)',
-          position: 'relative',
-          boxShadow: 'var(--shadow-lg)'
-        }}>
-          <Chessboard
-            id={`study-board-${opening.id}`}
-            position={opening.fen || 'start'}
-            boardOrientation={opening.color?.toLowerCase() === 'black' ? 'black' : 'white'}
-            arePiecesDraggable={false}
-            showBoardNotation={false}
-            animationDuration={0}
-            customDarkSquareStyle={{ backgroundColor: boardTheme.dark }}
-            customLightSquareStyle={{ backgroundColor: boardTheme.light }}
-            boardStyle={{
-              border: "none",
-              boxShadow: "none"
-            }}
-          />
-        </div>
-
-        <div style={{
-          fontFamily: "'Roboto Mono', monospace",
-          fontSize: 14,
-          color: 'var(--accent-gold)',
-          background: 'var(--accent-gold-10)',
-          borderRadius: 8,
-          padding: '10px 14px',
-          border: '1px solid var(--accent-gold-20)',
-          overflowX: 'auto',
-          whiteSpace: 'nowrap'
-        }}>
-          {opening.moves}
-        </div>
-
-        <p style={{
-          fontSize: 14,
-          color: 'var(--text-secondary)',
-          lineHeight: 1.6,
-          margin: 0
-        }}>
-          {opening.description}
-        </p>
-
-        <div style={{ display: 'flex', gap: 24, padding: '4px 0' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
-            <HiTrendingUp style={{ color: 'var(--accent-green)', fontSize: 16 }} />
-            <span style={{ color: 'var(--accent-green)', fontWeight: 700 }}>{opening.winRate}%</span>
-            <span style={{ color: 'var(--text-secondary)', marginLeft: 4 }}>win rate</span>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13 }}>
-            <HiStar style={{ color: 'var(--accent-gold)', fontSize: 16 }} />
-            <span style={{ color: 'var(--text-primary)', fontWeight: 700 }}>{opening.popularity}</span>
-            <span style={{ color: 'var(--text-secondary)', marginLeft: 4 }}>popularity</span>
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-          {opening.tags.map((tag) => (
-            <span key={tag} className="chip active" style={{ fontSize: 11 }}>{tag}</span>
-          ))}
-        </div>
-
-        <div style={{ display: 'flex', gap: 10 }}>
-          <button
-            className="btn btn-primary"
-            style={{ flex: 1 }}
-            onClick={onPlay}
-            id="study-modal-play-btn"
-            type="button"
-          >
-            <HiPlay /> Play this Opening
-          </button>
-          <button className="btn btn-ghost" onClick={onClose} id="study-modal-close-btn" type="button">
-            Close
-          </button>
-        </div>
-      </div>
     </div>
   );
 }

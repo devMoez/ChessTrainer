@@ -1,6 +1,6 @@
 import React, { memo, useCallback } from 'react';
 import MiniBoard from './MiniBoard.jsx';
-import { HiTrendingUp, HiStar } from 'react-icons/hi';
+import { Star, TrendingUp } from 'lucide-react';
 import { useApp } from '../context/AppContext.jsx';
 
 const difficultyClassMap = {
@@ -60,12 +60,12 @@ const OpeningCard = memo(function OpeningCard({ opening, onClick, highlighted = 
 
         <div className="card-meta">
           <span className="card-meta-item">
-            <HiTrendingUp />
+            <TrendingUp size={16} />
             <span className="win-rate-positive">{opening.winRate}%</span>
             <span>win rate</span>
           </span>
           <span className="card-meta-item">
-            <HiStar />
+            <Star size={16} />
             <span>{opening.popularity}/100</span>
           </span>
         </div>

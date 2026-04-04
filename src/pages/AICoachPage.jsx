@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Chess } from 'chess.js';
+import { Chessboard } from 'react-chessboard';
 import {
   HiKey,
   HiUpload,
