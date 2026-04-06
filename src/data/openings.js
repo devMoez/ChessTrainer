@@ -1,12 +1,134 @@
 export const OPENINGS = [
   { id: 'ruy-lopez-main', name: 'Ruy Lopez: Main Line', eco: 'C89', difficulty: 'Advanced', winRate: 50, popularity: 80, color: 'White', description: 'Classical Ruy Lopez with sharp theoretical play.', moves: '1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. 0-0 Be7 6. Re1 b5 7. Bb3 d6 8. c3 0-0 9. h3', fen: 'r1bq1rk1/1pp2pbp/3ppn2/1p2p3/4P3/1BP2N1P/PPP3PP/RNBQR1K1 b - - 0 9', tags: ['Main', 'Classical', 'Theoretical'] },
-  { id: 'sicilian-najdorf-main', name: 'Sicilian: Najdorf Variation', eco: 'B90', difficulty: 'Advanced', winRate: 51, popularity: 77, color: 'Black', description: 'Sharp Sicilian with complex tactics.', moves: '1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 a6 6. Bg5 e6 7. f4', fen: 'rnbqkb1r/1pp2ppp/p2p1n2/6b1/3NpP2/2N5/PPP3PP/R1BQK1NR b KQkq f3 0 7', tags: ['Najdorf', 'Sharp', 'Sicilian'] },
+  { 
+    id: 'sicilian-najdorf-main', 
+    name: 'Sicilian: Najdorf', 
+    eco: 'B90', 
+    difficulty: 'Advanced', 
+    winRate: 51, 
+    popularity: 77, 
+    color: 'Black', 
+    description: 'Sharp Sicilian with complex tactics.', 
+    moves: '1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 a6 6. Bg5 e6 7. f4', 
+    fen: 'rnbqkb1r/1pp2ppp/p2p1n2/6b1/3NpP2/2N5/PPP3PP/R1BQK1NR b KQkq f3 0 7', 
+    tags: ['Najdorf', 'Sharp', 'Sicilian'],
+    variations: [
+      {
+        id: 'najdorf-main',
+        name: 'Main Line 6.Bg5',
+        moves: '1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 a6 6. Bg5 e6 7. f4 Be7',
+        fen: 'rnbqk2r/1pp1bppp/p2ppn2/6B1/3NPP2/2N5/PPP3PP/R2QKB1R w KQkq - 0 8',
+        description: 'Classical Najdorf with Bg5',
+        isMain: true
+      },
+      {
+        id: 'najdorf-english-attack',
+        name: 'English Attack',
+        moves: '1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 a6 6. Be3 e5 7. Nb3',
+        fen: 'rnbqkb1r/1pp2ppp/p2p1n2/4p3/4P3/1NN1B3/PPP2PPP/R2QKB1R b KQkq - 0 7',
+        description: 'Aggressive English Attack setup',
+        isMain: false
+      },
+      {
+        id: 'najdorf-positional',
+        name: 'Positional 6.Be2',
+        moves: '1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 a6 6. Be2 e5 7. Nb3',
+        fen: 'rnbqkb1r/1pp2ppp/p2p1n2/4p3/4P3/1NN5/PPP1BPPP/R1BQK2R b KQkq - 0 7',
+        description: 'Solid positional approach',
+        isMain: false
+      }
+    ]
+  },
   { id: 'french-winawer', name: 'French: Winawer Variation', eco: 'C18', difficulty: 'Advanced', winRate: 51, popularity: 74, color: 'Black', description: 'French defense with sharp positional play.', moves: '1. e4 e6 2. d4 d5 3. Nc3 Bb4 4. e5 c5 5. a3 Bxc3+ 6. bxc3 Ne7 7. Nf3', fen: 'rnbqk1nr/pppp1p1p/4ppb1/2p1P3/3P1N2/2P5/P4PPP/R1BQKB1R b KQkq - 0 7', tags: ['French', 'Winawer', 'Positional'] },
   { id: 'berlin-defense', name: 'Berlin Defense', eco: 'C67', difficulty: 'Advanced', winRate: 51, popularity: 75, color: 'Black', description: 'Critical defense to 1.e4 e5.', moves: '1. e4 e5 2. Nf3 Nc6 3. Bb5 Nf6 4. 0-0 Nxe4 5. d4 Nd6 6. Bxc6 dxc6 7. dxe5 Nf5', fen: 'r1bqkb1r/ppp3pp/2p5/4P1n1/8/8/PPP3PP/RNBQK1NR w KQkq - 0 7', tags: ['Berlin', 'Defense', 'Classical'] },
   { id: 'kings-indian-attack', name: 'Kings Indian: Attack Variation', eco: 'E60', difficulty: 'Intermediate', winRate: 50, popularity: 72, color: 'White', description: 'Flexible Kings Indian with aggressive setup.', moves: '1. d4 Nf6 2. c4 g6 3. Nc3 Bg7 4. Nf3 0-0 5. Be2 e5 6. 0-0', fen: 'rnbq1rk1/pppp1pbp/5np1/4p3/2PPP3/2N2N2/PPP1B1PP/R1BQK2R w KQ - 0 6', tags: ['Kings Indian', 'Attack', 'Flexible'] },
-  { id: 'queens-gambit-declined', name: 'Queens Gambit: Declined', eco: 'D30', difficulty: 'Intermediate', winRate: 50, popularity: 78, color: 'White', description: 'Solid classical opening with pawn center.', moves: '1. d4 d5 2. c4 e6 3. Nc3 Nf6 4. Bg5 Be7 5. e3 0-0 6. Nf3 Nbd7 7. Rc1', fen: 'r1bq1rk1/pppnbppp/4pn2/6b1/2PPP3/2N1BP2/PPP3PP/R2QK2R b KQ - 1 7', tags: ['Queens Gambit', 'Declined', 'Classical'] },
+  { 
+    id: 'queens-gambit-declined', 
+    name: 'Queens Gambit: Declined', 
+    eco: 'D30', 
+    difficulty: 'Intermediate', 
+    winRate: 50, 
+    popularity: 78, 
+    color: 'White', 
+    description: 'Solid classical opening with pawn center.', 
+    moves: '1. d4 d5 2. c4 e6 3. Nc3 Nf6 4. Bg5 Be7 5. e3 0-0 6. Nf3 Nbd7 7. Rc1', 
+    fen: 'r1bq1rk1/pppnbppp/4pn2/6b1/2PPP3/2N1BP2/PPP3PP/R2QK2R b KQ - 1 7', 
+    tags: ['Queens Gambit', 'Declined', 'Classical'],
+    variations: [
+      {
+        id: 'qgd-main',
+        name: 'Main Line',
+        moves: '1. d4 d5 2. c4 e6 3. Nc3 Nf6 4. Bg5 Be7 5. e3 0-0 6. Nf3 Nbd7 7. Rc1',
+        fen: 'r1bq1rk1/pppnbppp/4pn2/3p2B1/2PP4/2N1PN2/PP3PPP/R2QKB1R w KQ - 0 7',
+        description: 'Classical main line with Bg5',
+        isMain: true
+      },
+      {
+        id: 'qgd-exchange',
+        name: 'Exchange Variation',
+        moves: '1. d4 d5 2. c4 e6 3. Nc3 Nf6 4. cxd5 exd5 5. Bg5 Be7 6. e3 0-0 7. Bd3',
+        fen: 'rnbq1rk1/ppp1bppp/5n2/3p2B1/3P4/2N1PB2/PP3PPP/R2QK1NR w KQ - 0 7',
+        description: 'Simplified exchange variation',
+        isMain: false
+      },
+      {
+        id: 'qgd-cambridge-springs',
+        name: 'Cambridge Springs',
+        moves: '1. d4 d5 2. c4 e6 3. Nc3 Nf6 4. Bg5 Nbd7 5. e3 c6 6. Nf3 Qa5 7. Nd2',
+        fen: 'r1b1kb1r/pp1n1ppp/2pppn2/q5B1/2PP4/4P3/PP1N1PPP/R2QKB1R w KQkq - 0 7',
+        description: 'Sharp counterattacking line',
+        isMain: false
+      }
+    ]
+  },
   { id: 'caro-kann-main', name: 'Caro-Kann: Main Line', eco: 'B19', difficulty: 'Intermediate', winRate: 50, popularity: 72, color: 'Black', description: 'Solid Caro-Kann with classical structure.', moves: '1. d4 d5 2. c4 c6 3. Nc3 Nf6 4. cxd5 cxd5 5. Bf4 Nc6 6. Nf3 Be6 7. e3', fen: 'r1bqkb1r/pppp1ppp/2np1n2/3p4/3P1B2/2N1PN2/PPP3PP/R2QKB1R b KQkq - 2 7', tags: ['Caro-Kann', 'Main', 'Solid'] },
-  { id: 'italian-game', name: 'Italian Game: Main', eco: 'C50', difficulty: 'Beginner', winRate: 50, popularity: 75, color: 'White', description: 'Classic Italian opening with piece development.', moves: '1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. d3 Nf6 5. c3 d6 6. 0-0 0-0 7. h3', fen: 'r1bq1rk1/pppp1pbp/2npp1n1/4p3/2B1P3/2PP1N1P/PPP3PP/RNBQK2R b KQ - 1 8', tags: ['Italian', 'Classical', 'Main'] },
+  { 
+    id: 'italian-game', 
+    name: 'Italian Game', 
+    eco: 'C50', 
+    difficulty: 'Beginner', 
+    winRate: 50, 
+    popularity: 75, 
+    color: 'White', 
+    description: 'Classic Italian opening with piece development.', 
+    moves: '1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. d3 Nf6 5. c3 d6 6. 0-0 0-0 7. h3', 
+    fen: 'r1bq1rk1/pppp1pbp/2npp1n1/4p3/2B1P3/2PP1N1P/PPP3PP/RNBQK2R b KQ - 1 8', 
+    tags: ['Italian', 'Classical', 'Main'],
+    variations: [
+      {
+        id: 'italian-main',
+        name: 'Main Line',
+        moves: '1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. d3 Nf6 5. c3 d6 6. 0-0 0-0 7. h3',
+        fen: 'r1bq1rk1/pppp1pbp/2npp1n1/4p3/2B1P3/2PP1N1P/PPP3PP/RNBQK2R b KQ - 1 8',
+        description: 'Classical Italian with slow buildup',
+        isMain: true
+      },
+      {
+        id: 'italian-giuoco-piano',
+        name: 'Giuoco Piano',
+        moves: '1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. c3 Nf6 5. d4 exd4 6. cxd4 Bb4+ 7. Bd2',
+        fen: 'r1bqk2r/pppp1ppp/2n2n2/8/1bBPP3/5N2/PPP2PPP/RN1QK2R b KQkq - 0 7',
+        description: 'Sharp central pawn break with d4',
+        isMain: false
+      },
+      {
+        id: 'italian-two-knights',
+        name: 'Two Knights Defense',
+        moves: '1. e4 e5 2. Nf3 Nc6 3. Bc4 Nf6 4. Ng5 d5 5. exd5 Na5 6. Bb5+ c6',
+        fen: 'r1bqkb1r/ppp2ppp/2p5/nP1p4/6P1/8/PPPP1PPP/RNBQK1NR w KQkq - 0 7',
+        description: 'Sharp counterattack with early d5',
+        isMain: false
+      },
+      {
+        id: 'italian-evans-gambit',
+        name: 'Evans Gambit',
+        moves: '1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. b4 Bxb4 5. c3 Ba5 6. d4 exd4 7. 0-0',
+        fen: 'r1bqk1nr/pppp1ppp/2n5/b7/2BpP3/2P2N2/P4PPP/RNBQ1RK1 b kq - 0 7',
+        description: 'Aggressive gambit with pawn sacrifice',
+        isMain: false
+      }
+    ]
+  },
   { id: 'scotch-game', name: 'Scotch Game: Main', eco: 'C45', difficulty: 'Intermediate', winRate: 50, popularity: 71, color: 'White', description: 'Classical Scotch with sharp tactics.', moves: '1. e4 e5 2. Nf3 Nc6 3. d4 exd4 4. Nxd4 Nf6 5. Nc3 Bb4 6. Nxc6', fen: 'r1bqk2r/pppp1ppp/2n2n2/8/2B1P3/2N5/PPPP1PPP/R1BQK2R w KQkq - 0 6', tags: ['Scotch', 'Sharp', 'Tactical'] },
   { id: 'english-opening', name: 'English Opening', eco: 'A13', difficulty: 'Intermediate', winRate: 50, popularity: 70, color: 'White', description: 'Flexible flank opening setup.', moves: '1. c4 e6 2. g3 d5 3. Bg2 Nf6 4. Nf3 Be7 5. 0-0 0-0 6. b3 c6 7. Bb2', fen: 'r1bq1rk1/ppp2pbp/2pppn2/3p4/2P5/1P3NP1/PB2PPBP/RN1Q1RK1 b - - 0 7', tags: ['English', 'Flexible', 'Flank'] },
   { id: 'reti-opening', name: 'Reti Opening', eco: 'A05', difficulty: 'Intermediate', winRate: 50, popularity: 68, color: 'White', description: 'Hypermodern opening with flexible center.', moves: '1. Nf3 d5 2. c4 dxc4 3. e3 Nf6 4. Bxc4 e6 5. d4 c5 6. 0-0', fen: 'rnbqkb1r/pppp1ppp/4pn2/2p5/2BPP3/4P3/PPP3PP/RNBQK1NR w KQkq c6 0 6', tags: ['Reti', 'Hypermodern', 'Flexible'] },

@@ -5,6 +5,8 @@ import { Chessboard } from 'react-chessboard';
 import { useApp } from '../context/AppContext.jsx';
 import { HiArrowLeft, HiRefresh, HiLightBulb, HiCheckCircle, HiXCircle } from 'react-icons/hi';
 import useChessDragClass from '../hooks/useChessDragClass.js';
+import VariationControlBar from '../components/VariationControlBar.jsx';
+import VariationSelectorModal from '../components/VariationSelectorModal.jsx';
 
 export default function OpeningTrainerPage() {
   const location = useLocation();
@@ -24,22 +26,39 @@ export default function OpeningTrainerPage() {
   const isPlayerWhite = isBothSidesMode ? true : openingData?.color?.toLowerCase() !== 'black';
   const boardOrientation = isBothSidesMode ? 'white' : (isPlayerWhite ? 'white' : 'black');
 
+  // Get variations from opening data, or create single variation from legacy format
+  const variations = openingData?.variations || [{
+    id: `${openingData?.id}-main`,
+    name: 'Main Line',
+    moves: openingData?.moves || '',
+    fen: openingData?.fen || '',
+    description: openingData?.description || '',
+    isMain: true
+  }];
+
   const chessRef = useRef(new Chess());
-  const isAIMovingRef = useRef(false); // ref instead of state — no re-render side effects
+  const isAIMovingRef = useRef(false);
   const [fen, setFen] = useState(() => new Chess().fen());
   const [moves, setMoves] = useState([]);
   const [moveIndex, setMoveIndex] = useState(0);
   const [feedback, setFeedback] = useState(null);
   const [showHint, setShowHint] = useState(false);
+  
+  // Variation state
+  const [currentVariationIndex, setCurrentVariationIndex] = useState(0);
+  const [completedVariations, setCompletedVariations] = useState(new Set());
+  const [showVariationModal, setShowVariationModal] = useState(false);
 
-  // Parse moves
+  // Parse moves from current variation
   useEffect(() => {
-    if (!openingData?.moves) return;
-    const parsed = openingData.moves
+    const currentVariation = variations[currentVariationIndex];
+    if (!currentVariation?.moves) return;
+    
+    const parsed = currentVariation.moves
       .replace(/\d+\.\s*/g, ' ')
       .split(/\s+/)
       .filter(Boolean);
-    console.log('PARSED MOVES:', parsed);
+    console.log('PARSED MOVES:', parsed, 'from variation:', currentVariation.name);
     chessRef.current = new Chess();
     isAIMovingRef.current = false;
     setFen(chessRef.current.fen());
@@ -47,7 +66,7 @@ export default function OpeningTrainerPage() {
     setMoveIndex(0);
     setFeedback(null);
     setShowHint(false);
-  }, [openingData]);
+  }, [currentVariationIndex, variations]);
 
   // AI move effect — only depends on fen and moveIndex, not isAIMoving
   useEffect(() => {
@@ -161,6 +180,46 @@ export default function OpeningTrainerPage() {
     setShowHint(false);
   }
 
+  // Variation navigation functions
+  function handleRepeatLine() {
+    resetTrainer();
+  }
+
+  function handleNextLine() {
+    if (currentVariationIndex < variations.length - 1) {
+      // Mark current as completed before switching
+      if (moveIndex >= moves.length) {
+        setCompletedVariations(prev => new Set(prev).add(currentVariationIndex));
+      }
+      setCurrentVariationIndex(prev => prev + 1);
+    }
+  }
+
+  function handleChooseLine() {
+    setShowVariationModal(true);
+  }
+
+  function handleSelectVariation(index) {
+    if (index !== currentVariationIndex) {
+      // Mark current as completed if finished before switching
+      if (moveIndex >= moves.length) {
+        setCompletedVariations(prev => new Set(prev).add(currentVariationIndex));
+      }
+      setCurrentVariationIndex(index);
+    }
+  }
+
+  function handleHint() {
+    setShowHint(true);
+  }
+
+  // Mark variation as completed when finished
+  useEffect(() => {
+    if (moves.length > 0 && moveIndex >= moves.length) {
+      setCompletedVariations(prev => new Set(prev).add(currentVariationIndex));
+    }
+  }, [moveIndex, moves.length, currentVariationIndex]);
+
   if (!openingData) {
     return (
       <div style={{ textAlign: 'center', padding: 40 }}>
@@ -233,6 +292,21 @@ export default function OpeningTrainerPage() {
               </div>
             )}
           </div>
+
+          {/* Variation Control Bar - Only show if opening has multiple variations */}
+          {variations.length > 1 && (
+            <div style={{ marginTop: 20 }}>
+              <VariationControlBar
+                currentVariationIndex={currentVariationIndex}
+                totalVariations={variations.length}
+                onRepeatLine={handleRepeatLine}
+                onNextLine={handleNextLine}
+                onChooseLine={handleChooseLine}
+                onHint={handleHint}
+                isCompleted={isFinished}
+              />
+            </div>
+          )}
         </div>
 
         {/* Sidebar */}
@@ -319,6 +393,17 @@ export default function OpeningTrainerPage() {
           )}
         </div>
       </div>
+
+      {/* Variation Selector Modal */}
+      {showVariationModal && variations.length > 1 && (
+        <VariationSelectorModal
+          variations={variations}
+          currentVariationIndex={currentVariationIndex}
+          completedVariations={completedVariations}
+          onSelect={handleSelectVariation}
+          onClose={() => setShowVariationModal(false)}
+        />
+      )}
 
       <style>{`
         @keyframes feedbackPop {
