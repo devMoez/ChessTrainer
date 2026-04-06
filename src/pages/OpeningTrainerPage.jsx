@@ -3,9 +3,8 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Chess } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
 import { useApp } from '../context/AppContext.jsx';
-import { HiArrowLeft, HiRefresh, HiLightBulb, HiCheckCircle, HiXCircle } from 'react-icons/hi';
+import { HiArrowLeft, HiRefresh, HiLightBulb, HiCheckCircle, HiXCircle, HiArrowRight, HiViewGrid } from 'react-icons/hi';
 import useChessDragClass from '../hooks/useChessDragClass.js';
-import VariationControlBar from '../components/VariationControlBar.jsx';
 import VariationSelectorModal from '../components/VariationSelectorModal.jsx';
 
 export default function OpeningTrainerPage() {
@@ -292,21 +291,6 @@ export default function OpeningTrainerPage() {
               </div>
             )}
           </div>
-
-          {/* Variation Control Bar - Only show if opening has multiple variations */}
-          {variations.length > 1 && (
-            <div style={{ marginTop: 20 }}>
-              <VariationControlBar
-                currentVariationIndex={currentVariationIndex}
-                totalVariations={variations.length}
-                onRepeatLine={handleRepeatLine}
-                onNextLine={handleNextLine}
-                onChooseLine={handleChooseLine}
-                onHint={handleHint}
-                isCompleted={isFinished}
-              />
-            </div>
-          )}
         </div>
 
         {/* Sidebar */}
@@ -343,6 +327,16 @@ export default function OpeningTrainerPage() {
                 )}
               </p>
 
+              {/* Show line indicator if multiple variations */}
+              {variations.length > 1 && (
+                <div style={{
+                  fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)',
+                  marginBottom: 16, textAlign: 'center',
+                }}>
+                  Line {currentVariationIndex + 1} of {variations.length}
+                </div>
+              )}
+
               {showHint && moveIndex < moves.length && (
                 <div style={{
                   background: 'var(--accent-gold-10)', border: '1px solid var(--accent-gold-20)',
@@ -365,7 +359,8 @@ export default function OpeningTrainerPage() {
                 </div>
               )}
 
-              <div style={{ display: 'flex', gap: 12 }}>
+              {/* Existing buttons: Reset and Get Hint */}
+              <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
                 <button
                   style={{
                     background: 'none', border: '1px solid var(--border)',
@@ -389,6 +384,52 @@ export default function OpeningTrainerPage() {
                   <HiLightBulb /> Get Hint
                 </button>
               </div>
+
+              {/* Variation buttons - Only show if opening has multiple variations */}
+              {variations.length > 1 && (
+                <>
+                  <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
+                    <button
+                      style={{
+                        background: 'none', border: '1px solid var(--border)',
+                        color: 'var(--text-primary)', padding: '8px 12px',
+                        borderRadius: 6, cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', gap: 6,
+                      }}
+                      onClick={handleRepeatLine}
+                    >
+                      <HiRefresh /> Repeat Line
+                    </button>
+                    <button
+                      style={{
+                        background: 'none', border: '1px solid var(--border)',
+                        color: 'var(--text-primary)', padding: '8px 12px',
+                        borderRadius: 6, cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', gap: 6,
+                        opacity: currentVariationIndex >= variations.length - 1 ? 0.4 : 1,
+                      }}
+                      onClick={handleNextLine}
+                      disabled={currentVariationIndex >= variations.length - 1}
+                    >
+                      <HiArrowRight /> Next Line
+                    </button>
+                  </div>
+                  <div style={{ display: 'flex', gap: 12 }}>
+                    <button
+                      style={{
+                        background: 'none', border: '1px solid var(--border)',
+                        color: 'var(--text-primary)', padding: '8px 12px',
+                        borderRadius: 6, cursor: 'pointer',
+                        display: 'flex', alignItems: 'center', gap: 6,
+                        flex: 1,
+                      }}
+                      onClick={handleChooseLine}
+                    >
+                      <HiViewGrid /> Choose Line
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           )}
         </div>
