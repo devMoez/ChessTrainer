@@ -46,7 +46,7 @@ import {
 
 const DEFAULT_BOARD_PX = 756;
 const EMPTY_EVAL = Object.freeze({ bestMove: '', score: '0.0', depth: '0', pv: '' });
-const DEFAULT_HUMANIZE_ELO = 1200;
+const DEFAULT_HUMANIZE_ELO = 3200;
 const ENGINE_ARROW_STYLES = Object.freeze([
   { color: 'rgba(76, 175, 80, 0.88)', tone: 'green' },
   { color: 'rgba(76, 143, 230, 0.84)', tone: 'blue' },
@@ -66,7 +66,7 @@ function clampThinkingTime(value) {
 
 function clampHumanizeElo(value) {
   if (!Number.isFinite(value)) return DEFAULT_HUMANIZE_ELO;
-  return Math.max(600, Math.min(2600, Math.round(value)));
+  return Math.max(600, Math.min(3200, Math.round(value)));
 }
 
 function toggleTurn(turn) {
@@ -89,7 +89,9 @@ function getHumanizeWeights(elo) {
   if (elo <= 1300) return [0.48, 0.22, 0.14, 0.10, 0.06];
   if (elo <= 1700) return [0.63, 0.20, 0.09, 0.05, 0.03];
   if (elo <= 2100) return [0.78, 0.13, 0.05, 0.025, 0.015];
-  return [0.9, 0.07, 0.02, 0.01, 0.0];
+  if (elo <= 2600) return [0.9, 0.07, 0.02, 0.01, 0.0];
+  if (elo <= 3000) return [0.92, 0.05, 0.02, 0.01, 0.0];
+  return [0.94, 0.04, 0.015, 0.005, 0.0]; // 3200+ Super GM - still humanized
 }
 
 function chooseHumanizedMove(candidates, elo) {
