@@ -15,7 +15,8 @@ const MiniBoard = memo(function MiniBoard({ fen, lightColor = '#F0D9B5', darkCol
   const { pieceStyle } = useApp();
   const [boardId] = useState(() => nextMiniBoardId());
   const wrapRef = useRef(null);
-  const [boardPx, setBoardPx] = useState(0);
+  const [boardPx, setBoardPx] = useState(300); // Default to 300px for instant render
+  const previousWidth = useRef(0);
 
   useEffect(() => {
     const el = wrapRef.current;
@@ -23,52 +24,75 @@ const MiniBoard = memo(function MiniBoard({ fen, lightColor = '#F0D9B5', darkCol
 
     const measure = () => {
       const w = Math.floor(el.getBoundingClientRect().width);
-      if (w > 0) setBoardPx(w);
+      // Only update if width changed significantly (> 2px) to reduce re-renders
+      if (w > 0 && Math.abs(previousWidth.current - w) > 2) {
+        previousWidth.current = w;
+        setBoardPx(w);
+      }
     };
 
     measure();
+    const timeout = setTimeout(measure, 50);
 
-    if (typeof ResizeObserver === 'undefined') return;
+    if (typeof ResizeObserver === 'undefined') {
+      clearTimeout(timeout);
+      return;
+    }
+    
     const ro = new ResizeObserver(() => measure());
     ro.observe(el);
-    return () => ro.disconnect();
+    return () => {
+      clearTimeout(timeout);
+      ro.disconnect();
+    };
   }, []);
 
   const squarePx = useMemo(() => Math.max(1, Math.floor(boardPx / 8)), [boardPx]);
+  
+  // Pieces are now globally cached - this will be instant after first render
   const pieces = useMemo(() => getPieceRenderers(pieceStyle, squarePx), [pieceStyle, squarePx]);
 
-  // react-chessboard v5 uses `options` object — NOT direct props
-  const boardOptions = useMemo(() => {
-    const options = {
-      id: boardId,
-      position: fen || START_POSITION,
-      boardOrientation: orientation,
-      allowDragging: false,
-      showNotation: false,
-      showAnimations: false,
-      allowDrawingArrows: false,
-      lightSquareStyle: { backgroundColor: lightColor },
-      darkSquareStyle: { backgroundColor: darkColor },
-    };
-
-    if (pieces) {
-      options.pieces = pieces;
-    }
-
-    return options;
-  }, [boardId, fen, pieces, orientation, lightColor, darkColor]);
+  // Memoize position to prevent unnecessary recalculations
+  const position = useMemo(() => fen || START_POSITION, [fen]);
+  
+  // Memoize square styles
+  const lightSquareStyle = useMemo(() => ({ backgroundColor: lightColor }), [lightColor]);
+  const darkSquareStyle = useMemo(() => ({ backgroundColor: darkColor }), [darkColor]);
 
   return (
     <div
       ref={wrapRef}
       className="mini-board"
-      style={{ width: '100%', aspectRatio: '1', pointerEvents: 'none', userSelect: 'none' }}
+      style={{ 
+        width: '100%', 
+        aspectRatio: '1', 
+        pointerEvents: 'none', 
+        userSelect: 'none',
+        contain: 'layout style paint' // CSS containment for performance
+      }}
       aria-hidden="true"
     >
-      {boardPx > 0 && (
-        <Chessboard options={boardOptions} />
-      )}
+      <Chessboard
+        id={boardId}
+        position={position}
+        boardOrientation={orientation}
+        arePiecesDraggable={false}
+        areArrowsAllowed={false}
+        showBoardNotation={false}
+        animationDuration={0}
+        customDarkSquareStyle={darkSquareStyle}
+        customLightSquareStyle={lightSquareStyle}
+        {...(pieces && { customPieces: pieces })}
+      />
     </div>
+  );
+}, (prevProps, nextProps) => {
+  // Custom comparison: only re-render if critical props actually change
+  return (
+    prevProps.fen === nextProps.fen &&
+    prevProps.orientation === nextProps.orientation &&
+    prevProps.lightColor === nextProps.lightColor &&
+    prevProps.darkColor === nextProps.darkColor
   );
 });
 

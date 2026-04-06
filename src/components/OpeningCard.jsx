@@ -83,6 +83,14 @@ const OpeningCard = memo(function OpeningCard({ opening, onClick, highlighted = 
       </div>
     </article>
   );
+}, (prevProps, nextProps) => {
+  // Custom comparison: only re-render if opening ID or highlight state changes
+  // This prevents re-renders when parent re-renders but props are same
+  return (
+    prevProps.opening.id === nextProps.opening.id &&
+    prevProps.highlighted === nextProps.highlighted &&
+    prevProps.onClick === nextProps.onClick
+  );
 });
 
 export default OpeningCard;
