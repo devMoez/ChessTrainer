@@ -3,7 +3,7 @@ import { Chessboard } from 'react-chessboard';
 import { useApp } from '../context/AppContext.jsx';
 import { getPieceRenderers } from '../chess/pieceRenderers.jsx';
 
-const START_POSITION = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR';
+const START_POSITION = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
 let boardSeq = 0;
 function nextBoardId() {
@@ -67,24 +67,13 @@ const PreviewBoard = memo(function PreviewBoard({
   
   // Validate FEN
   const validFen = useMemo(() => {
-    if (!fen) {
-      console.warn('[PreviewBoard] No FEN provided');
-      return null;
-    }
-    const valid = isValidFen(fen);
-    if (!valid) {
-      console.warn('[PreviewBoard] Invalid FEN:', fen);
-    }
-    return valid ? fen : null;
+    if (!fen) return null;
+    return isValidFen(fen) ? fen : null;
   }, [fen]);
   
-  // Debug logging
-  useEffect(() => {
-    if (import.meta.env.DEV) {
-      console.log('[PreviewBoard] Mounted:', { fen, validFen, boardPx });
-    }
-  }, []);
-
+  // Use validated FEN or fallback to start position
+  const position = useMemo(() => validFen || START_POSITION, [validFen]);
+  
   // Efficient resize observer
   useEffect(() => {
     const el = wrapRef.current;
@@ -122,9 +111,6 @@ const PreviewBoard = memo(function PreviewBoard({
     return getPieceRenderers(pieceStyle, squarePx);
   }, [pieceStyle, squarePx]);
   
-  // Use validated FEN or fallback to start position
-  const position = useMemo(() => validFen || START_POSITION, [validFen]);
-  
   // Memoize square styles
   const darkSquareStyle = useMemo(() => ({ backgroundColor: finalDarkColor }), [finalDarkColor]);
   const lightSquareStyle = useMemo(() => ({ backgroundColor: finalLightColor }), [finalLightColor]);
@@ -139,7 +125,6 @@ const PreviewBoard = memo(function PreviewBoard({
       style={{ 
         width: '100%', 
         height: '100%',
-        minHeight: '260px',
         aspectRatio: '1', 
         pointerEvents: 'none', 
         userSelect: 'none',

@@ -190,6 +190,26 @@ export default function ReviewPage() {
     );
   }, [checkAttackers, checkSquare, currentMove?.from, currentMove?.to, currentTone, highlightSquares]);
 
+  const handleFirstPosition = useCallback(() => setPositionIndex(0), []);
+  const handlePrevPosition = useCallback(() => setPositionIndex((current) => Math.max(0, current - 1)), []);
+  const handleNextPosition = useCallback(
+    () => setPositionIndex((current) => Math.min((review?.positions.length ?? 1) - 1, current + 1)),
+    [review?.positions.length]
+  );
+  const handleLastPosition = useCallback(
+    () => setPositionIndex((review?.positions.length ?? 1) - 1),
+    [review?.positions.length]
+  );
+  const handleToggleOrientation = useCallback(
+    () => setOrientation((current) => (current === 'white' ? 'black' : 'white')),
+    []
+  );
+  const handleResetPosition = useCallback(
+    () => setPositionIndex(Math.min(review?.positions.length ?? 1, review?.moves.length ?? 0)),
+    [review?.positions.length, review?.moves.length]
+  );
+  const handleTimelineChange = useCallback((event) => setPositionIndex(Number(event.target.value)), []);
+
   const boardOptions = useMemo(() => {
     const options = {
       id: 'review-board',
@@ -305,26 +325,49 @@ export default function ReviewPage() {
 
               <div className="review-navigation">
                 <div className="review-nav-buttons">
-                  <button className="move-ctrl-btn" type="button" onClick={() => setPositionIndex(0)}><HiChevronDoubleLeft /></button>
-                  <button className="move-ctrl-btn" type="button" onClick={() => setPositionIndex((current) => Math.max(0, current - 1))}><HiChevronLeft /></button>
-                  <button className="move-ctrl-btn" type="button" onClick={() => setPositionIndex((current) => Math.min((review?.positions.length ?? 1) - 1, current + 1))}><HiChevronRight /></button>
-                  <button className="move-ctrl-btn" type="button" onClick={() => setPositionIndex((review?.positions.length ?? 1) - 1)}><HiChevronDoubleRight /></button>
-                  <button className="move-ctrl-btn" type="button" onClick={() => setOrientation((current) => (current === 'white' ? 'black' : 'white'))}><HiSwitchHorizontal /></button>
-                  <button className="move-ctrl-btn" type="button" onClick={() => setPositionIndex(Math.min(review?.positions.length ?? 1, review?.moves.length ?? 0))}><HiRefresh /></button>
+                  <button className="move-ctrl-btn" type="button" onClick={handleFirstPosition}>
+                    <HiChevronDoubleLeft />
+                  </button>
+                  <button className="move-ctrl-btn" type="button" onClick={handlePrevPosition}>
+                    <HiChevronLeft />
+                  </button>
+                  <button className="move-ctrl-btn" type="button" onClick={handleNextPosition}>
+                    <HiChevronRight />
+                  </button>
+                  <button className="move-ctrl-btn" type="button" onClick={handleLastPosition}>
+                    <HiChevronDoubleRight />
+                  </button>
+                  <button className="move-ctrl-btn" type="button" onClick={handleToggleOrientation}>
+                    <HiSwitchHorizontal />
+                  </button>
+                  <button className="move-ctrl-btn" type="button" onClick={handleResetPosition}>
+                    <HiRefresh />
+                  </button>
                 </div>
 
-                <input className="review-timeline" type="range" min="0" max={(review?.positions.length ?? 1) - 1} value={positionIndex} onChange={(event) => setPositionIndex(Number(event.target.value))} />
+                <input
+                  className="review-timeline"
+                  type="range"
+                  min="0"
+                  max={(review?.positions.length ?? 1) - 1}
+                  value={positionIndex}
+                  onChange={handleTimelineChange}
+                />
               </div>
 
-              <div className="review-focus-card">
+              <div className="review-focus-info">
                 {currentMove ? (
                   <>
                     <div className="review-focus-header">
                       <span className={`review-badge ${currentTone?.className ?? ''}`} />
                       <strong>{currentMove.categoryLabel}</strong>
                     </div>
-                    <p>Move {currentMove.index + 1}: <strong>{currentMove.san}</strong> with a {currentMove.loss} cp loss.</p>
-                    <p>Best move: <strong>{currentMove.bestSan || '--'}</strong></p>
+                    <p>
+                      Move {currentMove.index + 1}: <strong>{currentMove.san}</strong> with a {currentMove.loss} cp loss.
+                    </p>
+                    <p>
+                      Best move: <strong>{currentMove.bestSan || '--'}</strong>
+                    </p>
                   </>
                 ) : (
                   <p>The start position is loaded. Step forward to inspect each move.</p>

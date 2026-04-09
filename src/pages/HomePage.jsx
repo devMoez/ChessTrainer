@@ -1,19 +1,13 @@
-import React, { useState, useRef, useLayoutEffect } from 'react';
+import React, { useState, useRef, useLayoutEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MiniBoard from '../components/MiniBoard.jsx';
-import { OPENINGS } from '../data/openings.js';
+import { useCachedOpenings } from '../hooks/useCacheInitializer.js';
 import { useApp } from '../context/AppContext.jsx';
 
-// 6 curated openings matching the mockup order
-const HOME_OPENINGS = [
-  'italian-game', 'sicilian-dragon', 'queens-gambit-declined',
-  'kings-indian-attack', 'ruy-lopez-main', 'french-winawer',
-].map(id => OPENINGS.find(o => o.id === id)).filter(Boolean);
-
 function difficultyBadgeStyle(d) {
-  if (d === 'Beginner')     return { background: 'rgba(76, 175, 80, 0.85)',  color: '#fff' };
-  if (d === 'Intermediate') return { background: 'rgba(255, 167, 38, 0.85)', color: '#1a1a1a' };
-  return                           { background: 'rgba(229, 57, 53, 0.85)',   color: '#fff' };
+  if (d === 'Beginner')     return { background: 'rgba(76, 175, 80, 0.85)',  color: 'var(--text-on-success)' };
+  if (d === 'Intermediate') return { background: 'rgba(255, 167, 38, 0.85)', color: 'var(--text-on-gold)' };
+  return                           { background: 'rgba(229, 57, 53, 0.85)',   color: 'var(--text-on-success)' };
 }
 
 function HomeOpeningCard({ opening, onClick, boardTheme }) {
@@ -21,28 +15,7 @@ function HomeOpeningCard({ opening, onClick, boardTheme }) {
     <article
       onClick={() => onClick && onClick(opening)}
       id={`home-card-${opening.id}`}
-      style={{
-        background: 'var(--bg-surface)',
-        borderStyle: 'solid',
-        borderWidth: '1px',
-        borderColor: 'var(--border)',
-        borderRadius: '12px',
-        overflow: 'hidden',
-        cursor: 'pointer',
-        display: 'flex',
-        flexDirection: 'column',
-        transition: 'transform 250ms ease, box-shadow 250ms ease, border-color 250ms ease',
-      }}
-      onMouseEnter={e => {
-        e.currentTarget.style.transform = 'translateY(-4px)';
-        e.currentTarget.style.boxShadow = '0 16px 48px rgba(0,0,0,0.6)';
-        e.currentTarget.style.borderColor = 'var(--border-hover)';
-      }}
-      onMouseLeave={e => {
-        e.currentTarget.style.transform = 'translateY(0)';
-        e.currentTarget.style.boxShadow = 'none';
-        e.currentTarget.style.borderColor = 'var(--border)';
-      }}
+      className="home-opening-card"
     >
       {/* Card Header: name + badge */}
       <div style={{
@@ -80,14 +53,14 @@ function HomeOpeningCard({ opening, onClick, boardTheme }) {
         overflow: 'hidden',
       }}>
         <MiniBoard
-          fen={opening.fen}
+          fen={opening.previewFEN || opening.fen}
           lightColor={boardTheme.light}
           darkColor={boardTheme.dark}
         />
       </div>
 
       {/* Card Footer */}
-      <div style={{ padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}>
+      <div style={{ padding: '10px 16px 14px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
         <p style={{
           fontSize: '12px',
           color: 'var(--text-secondary)',
@@ -100,27 +73,6 @@ function HomeOpeningCard({ opening, onClick, boardTheme }) {
         }}>
           {opening.description}
         </p>
-
-        <p style={{
-          fontSize: '12px',
-          color: 'var(--text-muted)',
-          fontFamily: 'monospace',
-          margin: 0,
-          marginTop: '2px',
-        }}>
-          {opening.moves}
-        </p>
-
-        <div style={{
-          fontSize: '12px',
-          color: 'var(--text-secondary)',
-          marginTop: '4px',
-          display: 'flex',
-          gap: '12px',
-        }}>
-          <span>Popularity: <strong style={{ color: 'var(--text-primary)' }}>{opening.popularity}%</strong></span>
-          <span>Win Rate: <strong style={{ color: 'var(--text-primary)' }}>{opening.winRate}%</strong></span>
-        </div>
       </div>
     </article>
   );
@@ -130,7 +82,22 @@ export default function HomePage() {
   const navigate = useNavigate();
   const { boardTheme } = useApp();
 
-  // ZERO-FLASH LAYOUT LOGIC
+  // Get cached openings with correct FENs - use hook to subscribe to updates
+  const { openings: cachedOpenings, isReady } = useCachedOpenings();
+  
+  const HOME_OPENING_IDS = [
+    'italian-game', 'sicilian-dragon', 'queens-gambit-declined',
+    'kings-indian-attack', 'ruy-lopez-main', 'french-winawer',
+  ];
+  
+  const HOME_OPENINGS = useMemo(() => {
+    if (!isReady || cachedOpenings.length === 0) return [];
+    return HOME_OPENING_IDS
+      .map(id => cachedOpenings.find(o => o.id === id))
+      .filter(Boolean);
+  }, [cachedOpenings, isReady]);
+
+  /* ZERO-FLASH LAYOUT LOGIC */
   const [layoutReady, setLayoutReady] = useState(false);
   const containerRef = useRef(null);
 
@@ -206,18 +173,23 @@ export default function HomePage() {
             visibility: layoutReady ? 'visible' : 'hidden',
             opacity: layoutReady ? 1 : 0,
             transition: 'opacity 0.2s ease-in',
-            minHeight: '400px', // Reserve space for 2 rows roughly
-            willChange: 'opacity'
+            minHeight: '400px'
           }}
         >
-          {HOME_OPENINGS.map(opening => (
-            <HomeOpeningCard
-              key={opening.id}
-              opening={opening}
-              onClick={handleCardClick}
-              boardTheme={boardTheme}
-            />
-          ))}
+          {!isReady || HOME_OPENINGS.length === 0 ? (
+            <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
+              Loading openings...
+            </div>
+          ) : (
+            HOME_OPENINGS.map(opening => (
+              <HomeOpeningCard
+                key={opening.id}
+                opening={opening}
+                onClick={handleCardClick}
+                boardTheme={boardTheme}
+              />
+            ))
+          )}
         </div>
       </section>
 
@@ -247,26 +219,8 @@ export default function HomePage() {
         </p>
         <button
           id="browse-all-openings-btn"
+          className="home-cta-btn"
           onClick={() => navigate('/openings')}
-          style={{
-            padding: '12px 32px',
-            background: 'transparent',
-            border: '1.5px solid var(--accent-gold)',
-            borderRadius: '8px',
-            color: 'var(--accent-gold)',
-            fontSize: '15px',
-            fontWeight: 600,
-            cursor: 'pointer',
-            transition: 'background 200ms ease, color 200ms ease',
-          }}
-          onMouseEnter={e => {
-            e.currentTarget.style.background = 'var(--accent-gold)';
-            e.currentTarget.style.color = '#1a1400';
-          }}
-          onMouseLeave={e => {
-            e.currentTarget.style.background = 'transparent';
-            e.currentTarget.style.color = 'var(--accent-gold)';
-          }}
         >
           Browse All Openings
         </button>

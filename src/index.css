@@ -94,9 +94,6 @@ body {
   -moz-osx-font-smoothing: grayscale;
   min-height: 100vh;
   overflow-x: hidden;
-  transition:
-    background-color var(--transition-base),
-    color var(--transition-base);
 }
 
 .btn,
@@ -119,9 +116,7 @@ body {
 .play-setup-input,
 .play-setup-slider {
   transition:
-    background-color var(--transition-base),
-    color var(--transition-base),
-    border-color var(--transition-base),
+    transform var(--transition-base),
     box-shadow var(--transition-base);
 }
 
@@ -152,26 +147,6 @@ input,
 textarea,
 select {
   font-family: inherit;
-}
-
-/* ---------- React Chessboard Global Fixes ---------- */
-/* Remove all white lines from chessboard elements */
-[class*="chessboard"] {
-  border: none !important;
-  outline: none !important;
-  box-shadow: none !important;
-}
-
-[class*="chessboard"] * {
-  border: none !important;
-  outline: none !important;
-}
-
-[class*="chessboard"] img,
-[class*="chessboard"] svg {
-  display: block;
-  border: none;
-  outline: none;
 }
 
 /* ---------- Typography Scale ---------- */
@@ -885,31 +860,6 @@ select {
   transform: translateZ(0);
 }
 
-.preview-board > div {
-  height: 100% !important;
-  border: none !important;
-  box-shadow: none !important;
-  outline: none !important;
-}
-
-.preview-board > div > div {
-  border: none !important;
-  outline: none !important;
-  box-shadow: none !important;
-}
-
-.preview-board img {
-  display: block;
-  border: none;
-  outline: none;
-}
-
-.preview-board svg {
-  display: block;
-  border: none;
-  outline: none;
-}
-
 .card-board-area {
   position: relative;
   aspect-ratio: 1;
@@ -925,31 +875,6 @@ select {
   line-height: 0;
   transform: translateZ(0) scale(1.01);
   transform-origin: center center;
-}
-
-.card-board-area .mini-board > div {
-  height: 100% !important;
-  border: none !important;
-  box-shadow: none !important;
-  outline: none !important;
-}
-
-.card-board-area .mini-board > div > div {
-  border: none !important;
-  outline: none !important;
-  box-shadow: none !important;
-}
-
-.card-board-area .mini-board img {
-  display: block;
-  border: none;
-  outline: none;
-}
-
-.card-board-area .mini-board svg {
-  display: block;
-  border: none;
-  outline: none;
 }
 
 .puzzle-card-board {
@@ -2598,7 +2523,7 @@ select {
 
 .extra-piece-wrapper {
   cursor: grab;
-  transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+  transition: transform 0.15s ease;
   border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
@@ -2656,7 +2581,7 @@ select {
   place-items: center;
   z-index: 40;
   backdrop-filter: blur(8px);
-  transition: transform 120ms ease, background 120ms ease, border-color 120ms ease;
+  transition: transform 120ms ease;
 }
 
 .analysis-settings-button:hover {
@@ -4724,5 +4649,204 @@ body.chess-piece-dragging .chessboard-container [data-piece] {
 
   .practice-selection-stats {
     grid-template-columns: 1fr;
+  }
+}
+
+/* ============================================================
+   HOME OPENING CARD — extracted from HomePage.jsx inline styles
+   ============================================================ */
+.home-opening-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  transition:
+    transform var(--transition-slow),
+    box-shadow var(--transition-slow),
+    border-color var(--transition-slow);
+}
+
+.home-opening-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-card-hover);
+  border-color: var(--border-hover);
+}
+
+.home-opening-card:focus-visible {
+  outline: 2px solid var(--accent-gold);
+  outline-offset: 2px;
+}
+
+.home-cta-btn {
+  padding: 12px 32px;
+  background: transparent;
+  border: 1.5px solid var(--accent-gold);
+  border-radius: var(--radius-sm);
+  color: var(--accent-gold);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition-base), color var(--transition-base);
+}
+
+.home-cta-btn:hover {
+  background: var(--accent-gold);
+  color: var(--text-on-gold);
+}
+
+.home-cta-btn:focus-visible {
+  outline: 2px solid var(--accent-gold);
+  outline-offset: 2px;
+}
+
+.home-cta-btn:active {
+  opacity: 0.85;
+}
+
+/* ============================================================
+   PUZZLE CARD — extracted from PuzzleCard.jsx inline styles
+   ============================================================ */
+.puzzle-card-compact {
+  width: 100%;
+  max-width: 320px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  overflow: hidden;
+  transition: transform var(--transition-slow), box-shadow var(--transition-slow), border-color var(--transition-slow);
+  cursor: pointer;
+  contain: layout style paint;
+}
+
+.puzzle-card-compact:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  border-color: var(--accent-gold);
+}
+
+.puzzle-card-board {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  background: var(--bg-surface-2);
+  overflow: hidden;
+  contain: strict;
+}
+
+.puzzle-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  padding: 4px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  backdrop-filter: blur(8px);
+  box-shadow: var(--shadow-sm);
+  z-index: 10;
+}
+
+.badge-beginner {
+  background: rgba(76, 175, 80, 0.9);
+  color: var(--text-on-success);
+}
+
+.badge-intermediate {
+  background: rgba(255, 167, 38, 0.9);
+  color: #1a1a1a;
+}
+
+.badge-advanced {
+  background: rgba(229, 57, 53, 0.9);
+  color: var(--text-on-success);
+}
+
+.puzzle-card-content {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.puzzle-card-category {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0;
+  line-height: 1.3;
+}
+
+.puzzle-card-desc {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin: 0;
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 38px;
+}
+
+.puzzle-card-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+
+.puzzle-tag {
+  font-size: 10px;
+  padding: 3px 8px;
+  background: var(--accent-gold-10);
+  border-radius: var(--radius-sm);
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.puzzle-card-btn {
+  width: 100%;
+  margin-top: 8px;
+  padding: 10px 16px;
+  background: var(--accent-gold);
+  color: var(--text-on-gold);
+  border: none;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition-base), transform var(--transition-base);
+}
+
+.puzzle-card-btn:hover {
+  background: var(--accent-gold-dim);
+  transform: scale(1.02);
+}
+
+.puzzle-card-btn:active {
+  transform: scale(0.98);
+}
+
+.puzzle-card-btn:focus-visible {
+  outline: 2px solid var(--accent-gold);
+  outline-offset: 2px;
+}
+
+/* ============================================================
+   REDUCED MOTION — respect user's system preference
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }

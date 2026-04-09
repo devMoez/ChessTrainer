@@ -3,7 +3,7 @@ import { Chessboard } from 'react-chessboard';
 import { useApp } from '../context/AppContext.jsx';
 import { getPieceRenderers } from '../chess/pieceRenderers.jsx';
 
-const START_POSITION = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR';
+const START_POSITION = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
 
 let miniBoardSeq = 0;
 function nextMiniBoardId() {
@@ -17,6 +17,8 @@ const MiniBoard = memo(function MiniBoard({ fen, lightColor = '#F0D9B5', darkCol
   const wrapRef = useRef(null);
   const [boardPx, setBoardPx] = useState(300); // Default to 300px for instant render
   const previousWidth = useRef(0);
+
+  // No-op effects removed for production optimization
 
   useEffect(() => {
     const el = wrapRef.current;
@@ -52,7 +54,7 @@ const MiniBoard = memo(function MiniBoard({ fen, lightColor = '#F0D9B5', darkCol
   // Pieces are now globally cached - this will be instant after first render
   const pieces = useMemo(() => getPieceRenderers(pieceStyle, squarePx), [pieceStyle, squarePx]);
 
-  // Memoize position to prevent unnecessary recalculations
+  // Position calculation
   const position = useMemo(() => fen || START_POSITION, [fen]);
   
   // Memoize square styles
@@ -85,14 +87,6 @@ const MiniBoard = memo(function MiniBoard({ fen, lightColor = '#F0D9B5', darkCol
         {...(pieces && { customPieces: pieces })}
       />
     </div>
-  );
-}, (prevProps, nextProps) => {
-  // Custom comparison: only re-render if critical props actually change
-  return (
-    prevProps.fen === nextProps.fen &&
-    prevProps.orientation === nextProps.orientation &&
-    prevProps.lightColor === nextProps.lightColor &&
-    prevProps.darkColor === nextProps.darkColor
   );
 });
 

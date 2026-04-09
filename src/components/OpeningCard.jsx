@@ -1,7 +1,8 @@
 import React, { memo, useCallback } from 'react';
-import MiniBoard from './MiniBoard.jsx';
+import PreviewBoard from './PreviewBoard.jsx';
 import { Star, TrendingUp } from 'lucide-react';
 import { useApp } from '../context/AppContext.jsx';
+import { getOpeningFEN } from '../utils/openingFenCache.js';
 
 const difficultyClassMap = {
   'Beginner': 'badge-beginner',
@@ -32,6 +33,9 @@ const OpeningCard = memo(function OpeningCard({ opening, onClick, highlighted = 
     onClick?.(opening);
   }, [onClick, opening]);
 
+  // Ensure we have the final position FEN
+  const finalFen = opening.previewFEN || getOpeningFEN(opening.id) || opening.fen;
+
   return (
     <article
       className={`opening-card${highlighted ? ' is-highlighted' : ''}`}
@@ -44,10 +48,8 @@ const OpeningCard = memo(function OpeningCard({ opening, onClick, highlighted = 
       data-opening-id={opening.id}
     >
       <div className="card-board-area">
-        <MiniBoard
-          fen={opening.fen}
-          lightColor={boardTheme.light}
-          darkColor={boardTheme.dark}
+        <PreviewBoard
+          fen={finalFen}
           orientation={opening.color === 'Black' ? 'black' : 'white'}
         />
         <span className={`card-difficulty-badge ${difficultyClass(opening.difficulty)}`}>
@@ -82,14 +84,6 @@ const OpeningCard = memo(function OpeningCard({ opening, onClick, highlighted = 
         </button>
       </div>
     </article>
-  );
-}, (prevProps, nextProps) => {
-  // Custom comparison: only re-render if opening ID or highlight state changes
-  // This prevents re-renders when parent re-renders but props are same
-  return (
-    prevProps.opening.id === nextProps.opening.id &&
-    prevProps.highlighted === nextProps.highlighted &&
-    prevProps.onClick === nextProps.onClick
   );
 });
 

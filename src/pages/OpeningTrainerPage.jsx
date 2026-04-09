@@ -57,7 +57,6 @@ export default function OpeningTrainerPage() {
       .replace(/\d+\.\s*/g, ' ')
       .split(/\s+/)
       .filter(Boolean);
-    console.log('PARSED MOVES:', parsed, 'from variation:', currentVariation.name);
     chessRef.current = new Chess();
     isAIMovingRef.current = false;
     setFen(chessRef.current.fen());
@@ -102,7 +101,6 @@ export default function OpeningTrainerPage() {
 
   // v5 API: receives sourceSquare, targetSquare, piece
   function onPieceDrop(sourceSquare, targetSquare, piece) {
-    console.log('DROP CALLED', sourceSquare, targetSquare, 'moveIndex:', moveIndex, 'moves.length:', moves.length);
 
     if (isAIMovingRef.current) {
       clearPieceDrag();
@@ -135,7 +133,6 @@ export default function OpeningTrainerPage() {
     const normalize = s => s.replace(/[+#]/g, '').replace(/0/g, 'O').trim();
     const played = normalize(move.san);
     const expected = normalize(moves[moveIndex]);
-    console.log('played:', played, 'expected:', expected);
 
     if (played !== expected) {
       setFeedback('wrong');
@@ -180,11 +177,11 @@ export default function OpeningTrainerPage() {
   }
 
   // Variation navigation functions
-  function handleRepeatLine() {
+  const handleRepeatLine = useCallback(() => {
     resetTrainer();
-  }
+  }, []);
 
-  function handleNextLine() {
+  const handleNextLine = useCallback(() => {
     if (currentVariationIndex < variations.length - 1) {
       // Mark current as completed before switching
       if (moveIndex >= moves.length) {
@@ -192,13 +189,13 @@ export default function OpeningTrainerPage() {
       }
       setCurrentVariationIndex(prev => prev + 1);
     }
-  }
+  }, [currentVariationIndex, moveIndex, moves.length, variations.length]);
 
-  function handleChooseLine() {
+  const handleChooseLine = useCallback(() => {
     setShowVariationModal(true);
-  }
+  }, []);
 
-  function handleSelectVariation(index) {
+  const handleSelectVariation = useCallback((index) => {
     if (index !== currentVariationIndex) {
       // Mark current as completed if finished before switching
       if (moveIndex >= moves.length) {
@@ -206,11 +203,11 @@ export default function OpeningTrainerPage() {
       }
       setCurrentVariationIndex(index);
     }
-  }
+  }, [currentVariationIndex, moveIndex, moves.length]);
 
-  function handleHint() {
+  const handleHint = useCallback(() => {
     setShowHint(true);
-  }
+  }, []);
 
   // Mark variation as completed when finished
   useEffect(() => {

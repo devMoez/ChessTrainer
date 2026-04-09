@@ -1,66 +1,73 @@
-import { useEffect } from 'react';
+/**
+ * CACHE INITIALIZER HOOKS
+ *
+ * The opening FEN cache is now populated synchronously at module load
+ * (see src/utils/openingFenCache.js + src/stores/openingCache.js).
+ *
+ * This file keeps the React-integration hooks (useCachedOpenings, etc.)
+ * but no longer calculates FENs or preloads anything — that all happens
+ * before the first render, with zero useEffect overhead.
+ */
+
+import * as React from 'react';
 import openingCacheStore from '../stores/openingCache.js';
 import puzzleCacheStore from '../stores/puzzleCache.js';
-import { OPENINGS } from '../data/openings.js';
 import { PUZZLES_BY_CATEGORY } from '../data/puzzles.js';
 
 /**
- * GLOBAL CACHE INITIALIZER
- * 
- * Preloads all openings and puzzles into memory on app mount.
- * This ensures instant preview board rendering with zero flicker.
- * 
- * Key Features:
- * - Runs once on app initialization
- * - Preloads ALL opening FENs
- * - Preloads ALL puzzle FENs
- * - Enables O(1) FEN lookups for preview boards
- * - Zero network requests needed
- * 
- * Performance:
- * - ~300 openings = ~30KB memory
- * - ~100 puzzles = ~10KB memory
- * - Total overhead: ~40KB for instant rendering
+ * No-op initialiser kept for backward compat with App.jsx.
+ * Puzzles still need their own preload (they have no FEN cache utility yet).
  */
 export function useCacheInitializer() {
-  useEffect(() => {
-    console.log('[CacheInitializer] Starting cache preload...');
-    
-    // Preload openings
-    if (!openingCacheStore.isReady()) {
-      console.log('[CacheInitializer] Preloading', OPENINGS.length, 'openings');
-      openingCacheStore.preloadOpenings(OPENINGS);
-    } else {
-      console.log('[CacheInitializer] Opening cache already ready');
-    }
-
-    // Preload puzzles - flatten all categories
+  React.useEffect(() => {
+    // Puzzles — still loaded here because they don't have a synchronous cache
     if (!puzzleCacheStore.isReady()) {
       const allPuzzles = Object.values(PUZZLES_BY_CATEGORY).flat();
-      console.log('[CacheInitializer] Preloading', allPuzzles.length, 'puzzles');
       puzzleCacheStore.preloadPuzzles(allPuzzles);
-    } else {
-      console.log('[CacheInitializer] Puzzle cache already ready');
     }
 
-    // Log cache statistics in development
-    setTimeout(() => {
+    if (import.meta.env.DEV) {
+      console.log('[CacheInitializer] Opening cache already ready:', openingCacheStore.isReady());
       console.log('[Cache] Opening stats:', openingCacheStore.getStats());
       console.log('[Cache] Puzzle stats:', puzzleCacheStore.getStats());
-      
-      // Test a few FENs
-      const testOpening = openingCacheStore.getOpening('ruy-lopez-main');
-      console.log('[Cache] Test opening (ruy-lopez-main):', testOpening);
-      
-      const testPuzzle = puzzleCacheStore.getPuzzle('m1-001');
-      console.log('[Cache] Test puzzle (m1-001):', testPuzzle);
-    }, 100);
+    }
   }, []);
 }
 
+// ─── React hooks ──────────────────────────────────────────────────────────────
+
 /**
- * Hook to get cached opening FEN
- * Returns null if not cached (component can show skeleton)
+ * Subscribe to the opening cache and return the full openings array.
+ * Because the cache is already initialised synchronously, the very first
+ * render already gets the complete, correct list — no loading state needed.
+ */
+export function useCachedOpenings() {
+  const [openings, setOpenings] = React.useState(
+    () => openingCacheStore.getAllOpenings(),   // initialiser runs synchronously
+  );
+  const [isReady, setIsReady] = React.useState(
+    () => openingCacheStore.isReady(),
+  );
+
+  React.useEffect(() => {
+    // Sync in case the store updated between render and effect
+    setOpenings(openingCacheStore.getAllOpenings());
+    setIsReady(openingCacheStore.isReady());
+
+    // Subscribe so future updates (e.g. clear/reset) propagate
+    const unsubscribe = openingCacheStore.subscribe(() => {
+      setOpenings(openingCacheStore.getAllOpenings());
+      setIsReady(openingCacheStore.isReady());
+    });
+
+    return unsubscribe;
+  }, []);
+
+  return { openings, isReady };
+}
+
+/**
+ * Return a single cached opening by ID (no hook — synchronous).
  */
 export function useCachedOpening(openingId) {
   if (!openingId) return null;
@@ -68,21 +75,23 @@ export function useCachedOpening(openingId) {
 }
 
 /**
- * Hook to get cached puzzle FEN
- * Returns null if not cached (component can show skeleton)
+ * Return a single cached puzzle by ID (no hook — synchronous).
  */
 export function useCachedPuzzle(puzzleId) {
   if (!puzzleId) return null;
   return puzzleCacheStore.getPuzzle(puzzleId);
 }
 
-/**
- * Direct FEN access (no hook, for optimization)
- */
+/** Direct FEN access (no hook) */
 export function getOpeningFen(openingId) {
   return openingCacheStore.getFen(openingId);
 }
 
 export function getPuzzleFen(puzzleId) {
   return puzzleCacheStore.getFen(puzzleId);
+}
+
+/** Get all cached openings directly (no hook) */
+export function getAllCachedOpenings() {
+  return openingCacheStore.getAllOpenings();
 }

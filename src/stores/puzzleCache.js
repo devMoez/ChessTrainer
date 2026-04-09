@@ -71,7 +71,7 @@ class PuzzleCacheStore {
     this.initialized = true;
     this.preloading = false;
     
-    console.log(`[PuzzleCache] ✓ Preloaded ${this.stats.totalPuzzles} puzzles`);
+    // Puzzles loaded — no console output in production
     this.notifyListeners();
   }
 

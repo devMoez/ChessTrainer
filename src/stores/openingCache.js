@@ -15,6 +15,8 @@
  * - Minimal memory footprint
  */
 
+import { getAllOpeningsWithFENs } from '../utils/openingFenCache.js';
+
 class OpeningCacheStore {
   constructor() {
     // Cache structure: { openingId: { fen, name, moves, ...metadata } }
@@ -27,6 +29,16 @@ class OpeningCacheStore {
       cacheHits: 0,
       cacheMisses: 0
     };
+
+    this.init();
+  }
+
+  /**
+   * Initialize cache synchronously on module load
+   */
+  init() {
+    const openings = getAllOpeningsWithFENs();
+    this.preloadOpenings(openings);
   }
 
   /**
@@ -40,26 +52,29 @@ class OpeningCacheStore {
     }
     
     this.preloading = true;
-    
+
     // Validate input
     if (!Array.isArray(openings) || openings.length === 0) {
       console.warn('[OpeningCache] No openings provided for preloading');
       this.preloading = false;
       return;
     }
-    
+
     // Batch load all openings
     openings.forEach(opening => {
       // Validate opening structure
-      if (!opening.id || !opening.fen) {
-        console.warn('[OpeningCache] Invalid opening structure:', opening);
+      if (!opening.id) {
+        console.warn('[OpeningCache] Invalid opening structure (no ID):', opening);
         return;
       }
-      
+
+      const previewFEN = opening.previewFEN || opening.fen || 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+
       this.cache.set(opening.id, {
         id: opening.id,
         name: opening.name,
         fen: opening.fen,
+        previewFEN: previewFEN,
         moves: opening.moves,
         eco: opening.eco,
         difficulty: opening.difficulty,
@@ -67,15 +82,18 @@ class OpeningCacheStore {
         popularity: opening.popularity,
         color: opening.color,
         description: opening.description || '',
-        tags: opening.tags || []
+        tags: opening.tags || [],
+        variations: (opening.variations || []).map(v => ({
+          ...v,
+          previewFEN: v.previewFEN || v.fen || previewFEN
+        }))
       });
     });
-    
+
     this.stats.totalOpenings = this.cache.size;
     this.initialized = true;
     this.preloading = false;
     
-    console.log(`[OpeningCache] ✓ Preloaded ${this.stats.totalOpenings} openings`);
     this.notifyListeners();
   }
 
@@ -101,7 +119,7 @@ class OpeningCacheStore {
     const opening = this.cache.get(openingId);
     if (opening) {
       this.stats.cacheHits++;
-      return opening.fen;
+      return opening.previewFEN;
     } else {
       this.stats.cacheMisses++;
       return null;

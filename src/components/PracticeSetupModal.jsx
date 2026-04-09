@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { HiAcademicCap, HiChip, HiSearch, HiSparkles, HiX } from 'react-icons/hi';
 import MiniBoard from './MiniBoard.jsx';
-import { OPENINGS } from '../data/openings.js';
+import { useCachedOpenings } from '../hooks/useCacheInitializer.js';
 
 function matchesOpening(opening, query) {
   if (!query) return true;
@@ -25,11 +25,14 @@ function matchesOpening(opening, query) {
 export default function PracticeSetupModal({ open, onClose }) {
   const navigate = useNavigate();
   const [query, setQuery] = useState('');
-  const [selectedId, setSelectedId] = useState(OPENINGS[0]?.id ?? null);
+  
+  // Get cached openings with correct FENs - use hook to subscribe to updates
+  const { openings: cachedOpenings } = useCachedOpenings();
+  const [selectedId, setSelectedId] = useState(cachedOpenings[0]?.id ?? null);
 
   const filteredOpenings = useMemo(
-    () => OPENINGS.filter((opening) => matchesOpening(opening, query)),
-    [query]
+    () => cachedOpenings.filter((opening) => matchesOpening(opening, query)),
+    [query, cachedOpenings]
   );
 
   const selectedOpening = useMemo(

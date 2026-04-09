@@ -37,18 +37,28 @@ export function AppProvider({ children }) {
     setTheme(prev => (prev === 'dark' ? 'light' : 'dark'));
   }, []);
 
+  const value = React.useMemo(() => ({
+    theme, toggleTheme,
+    showLegalDots, setShowLegalDots,
+    showThreats, setShowThreats,
+    pieceStyle, setPieceStyle,
+    boardTheme, setBoardTheme,
+    showEvalBar, setShowEvalBar,
+    autoEnPassant, setAutoEnPassant,
+  }), [
+    theme, toggleTheme,
+    showLegalDots,
+    showThreats,
+    pieceStyle,
+    boardTheme,
+    showEvalBar,
+    autoEnPassant
+  ]);
+
   return (
-    <AppContext.Provider value={{
-      theme, toggleTheme,
-      showLegalDots, setShowLegalDots,
-      showThreats, setShowThreats,
-      pieceStyle, setPieceStyle,
-      boardTheme, setBoardTheme,
-      showEvalBar, setShowEvalBar,
-      autoEnPassant, setAutoEnPassant,
-    }}>
-    {children}
-  </AppContext.Provider>
+    <AppContext.Provider value={value}>
+      {children}
+    </AppContext.Provider>
   );
 }
 

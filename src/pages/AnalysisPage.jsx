@@ -632,28 +632,21 @@ export default function AnalysisPage() {
 
     // Send minimal commands for maximum speed
     // Do NOT call 'ucinewgame' as it clears the hash table and slows analysis
-    console.log("ENGINE START ANALYSIS", targetFen);
     engineRef.current.postMessage('stop');
-    console.log("ENGINE COMMAND: stop");
 
     // Configure MultiPV before starting analysis
     const multipv = showTopMoves ? 5 : 1;
     engineRef.current.postMessage(`setoption name MultiPV value ${multipv}`);
-    console.log(`ENGINE COMMAND: setoption name MultiPV value ${multipv}`);
 
     engineRef.current.postMessage(`position fen ${targetFen}`);
-    console.log("ENGINE COMMAND: position");
     // Use time-based search for consistent responsiveness (~1s)
     engineRef.current.postMessage(`go movetime 1000`);
-    console.log("ENGINE COMMAND: go movetime 1000");
 
     return true;
   }, [engineReady, humanizeMoves, showMove, showTopMoves, updateEvalData]);
 
   const handleEngineMessage = useCallback((line, workerInstance) => {
     if (!line) return;
-
-    console.log("ENGINE:", line);
 
     if (line === 'uciok') {
       workerInstance.postMessage(`setoption name Hash value 256`);
@@ -666,7 +659,6 @@ export default function AnalysisPage() {
     }
 
     if (line === 'readyok') {
-      console.log("ENGINE READY RECEIVED");
       setEngineReady(true);
       workerInstance.postMessage('ucinewgame');
       return;
@@ -775,7 +767,6 @@ export default function AnalysisPage() {
   useEffect(() => {
     if (engineRef.current) return;
 
-    console.log("ENGINE WORKER CREATED");
     // Use the single-threaded lite WASM build for maximum compatibility and speed
     const engine = new Worker("/stockfish/stockfish-17.1-lite-single-03e3232.js");
 
@@ -791,7 +782,6 @@ export default function AnalysisPage() {
     engineRef.current = engine;
     // Small delay to ensure worker is ready
     setTimeout(() => {
-      console.log("SENDING UCI COMMAND");
       engine.postMessage('uci');
     }, 200);
   }, []); // Remove dependency to avoid re-runs
