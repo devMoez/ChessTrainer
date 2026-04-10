@@ -14,12 +14,13 @@ const ProfilePage = lazy(() => import('./pages/ProfilePage.jsx'));
 const OpeningTrainerPage = lazy(() => import('./pages/OpeningTrainerPage.jsx'));
 const PuzzlesPage = lazy(() => import('./pages/PuzzlesPage.jsx'));
 const PuzzlePage = lazy(() => import('./pages/PuzzlePage.jsx'));
-const AICoachPage = lazy(() => import('./pages/AICoachPage.jsx'));
-
 // New Play & Review Pages
 const PlayComputerPage = lazy(() => import('./pages/PlayComputerPage.jsx'));
 const PlayHumanPage = lazy(() => import('./pages/PlayHumanPage.jsx'));
 const ReviewPage = lazy(() => import('./pages/ReviewPage.jsx'));
+
+// Game Study Page (PGN viewer, image detection, import, coach)
+const GameAnalysisPage = lazy(() => import('./pages/GameAnalysisPage.jsx'));
 
 // Loading fallback component
 const PageLoader = () => (
@@ -77,7 +78,7 @@ export default function App() {
                   <Route path="/puzzles" element={<PuzzlesPage />} />
                   <Route path="/puzzle" element={<PuzzlePage />} />
                   <Route path="/analysis" element={<AnalysisPage />} />
-                  <Route path="/coach" element={<AICoachPage />} />
+                  <Route path="/study" element={<GameAnalysisPage />} />
                   <Route path="/review" element={<ReviewPage />} />
                   <Route path="/settings" element={<SettingsPage />} />
                   <Route path="/profile" element={<ProfilePage />} />

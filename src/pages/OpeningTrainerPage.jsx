@@ -3,9 +3,16 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { Chess } from 'chess.js';
 import { Chessboard } from 'react-chessboard';
 import { useApp } from '../context/AppContext.jsx';
-import { HiArrowLeft, HiRefresh, HiLightBulb, HiCheckCircle, HiXCircle, HiArrowRight, HiViewGrid } from 'react-icons/hi';
+import {
+  HiArrowLeft, HiRefresh, HiLightBulb, HiCheckCircle,
+} from 'react-icons/hi';
 import useChessDragClass from '../hooks/useChessDragClass.js';
-import VariationSelectorModal from '../components/VariationSelectorModal.jsx';
+import { useOpeningLines } from '../hooks/useOpeningLines.js';
+import { useMoveValidation } from '../hooks/useMoveValidation.js';
+import LineSelector from '../components/LineSelector.jsx';
+import LineNavigator from '../components/LineNavigator.jsx';
+import RepetitionCounter from '../components/RepetitionCounter.jsx';
+import MoveIndicator from '../components/MoveIndicator.jsx';
 
 export default function OpeningTrainerPage() {
   const location = useLocation();
@@ -18,55 +25,66 @@ export default function OpeningTrainerPage() {
     handlePieceDragStart,
   } = useChessDragClass();
 
-  const openingData = location.state?.opening;
+  const openingData  = location.state?.opening;
   const practiceMode = location.state?.practiceMode ?? 'repertoire';
-  const returnTo = location.state?.returnTo ?? '/openings';
+  const returnTo     = location.state?.returnTo ?? '/openings';
   const isBothSidesMode = practiceMode === 'both-sides';
-  const isPlayerWhite = isBothSidesMode ? true : openingData?.color?.toLowerCase() !== 'black';
+  const isPlayerWhite   = isBothSidesMode ? true : openingData?.color?.toLowerCase() !== 'black';
   const boardOrientation = isBothSidesMode ? 'white' : (isPlayerWhite ? 'white' : 'black');
 
-  // Get variations from opening data, or create single variation from legacy format
-  const variations = openingData?.variations || [{
-    id: `${openingData?.id}-main`,
-    name: 'Main Line',
-    moves: openingData?.moves || '',
-    fen: openingData?.fen || '',
-    description: openingData?.description || '',
-    isMain: true
-  }];
+  // ── Line management (selection + rep tracking) ────────────
 
-  const chessRef = useRef(new Chess());
+  const {
+    lines,
+    selectedLine,
+    selectedLineIdx,
+    selectedLineStats,
+    getLineStats,
+    selectLine,
+    prevLine,
+    nextLine,
+    incrementRep,
+    isFirst,
+    isLast,
+    totalLines,
+  } = useOpeningLines(openingData);
+
+  // ── Board / trainer state ─────────────────────────────────
+
+  const chessRef      = useRef(new Chess());
   const isAIMovingRef = useRef(false);
   const [fen, setFen] = useState(() => new Chess().fen());
-  const [moves, setMoves] = useState([]);
+  const [moves, setMoves]         = useState([]);
   const [moveIndex, setMoveIndex] = useState(0);
-  const [feedback, setFeedback] = useState(null);
-  const [showHint, setShowHint] = useState(false);
-  
-  // Variation state
-  const [currentVariationIndex, setCurrentVariationIndex] = useState(0);
-  const [completedVariations, setCompletedVariations] = useState(new Set());
-  const [showVariationModal, setShowVariationModal] = useState(false);
+  const [showHint, setShowHint]   = useState(false);
 
-  // Parse moves from current variation
+  // completedVariations: tracks which line indices are done (for isFinished glow)
+  const [completedVariations, setCompletedVariations] = useState(new Set());
+
+  // ── Move validation + corner feedback ─────────────────────
+  const { feedback, onSuccess, onError } =
+    useMoveValidation(chessRef, moves, moveIndex);
+
+  // ── Re-initialise board whenever the selected line changes ─
+
   useEffect(() => {
-    const currentVariation = variations[currentVariationIndex];
-    if (!currentVariation?.moves) return;
-    
-    const parsed = currentVariation.moves
+    if (!selectedLine?.moves) return;
+
+    const parsed = selectedLine.moves
       .replace(/\d+\.\s*/g, ' ')
       .split(/\s+/)
       .filter(Boolean);
-    chessRef.current = new Chess();
+
+    chessRef.current  = new Chess();
     isAIMovingRef.current = false;
     setFen(chessRef.current.fen());
     setMoves(parsed);
     setMoveIndex(0);
-    setFeedback(null);
     setShowHint(false);
-  }, [currentVariationIndex, variations]);
+  }, [selectedLine]);
 
-  // AI move effect — only depends on fen and moveIndex, not isAIMoving
+  // ── AI auto-move ──────────────────────────────────────────
+
   useEffect(() => {
     if (isBothSidesMode) return undefined;
     if (moves.length === 0) return;
@@ -99,17 +117,43 @@ export default function OpeningTrainerPage() {
     };
   }, [fen, isBothSidesMode, moveIndex, moves, isPlayerWhite]);
 
-  // v5 API: receives sourceSquare, targetSquare, piece
-  function onPieceDrop(sourceSquare, targetSquare, piece) {
+  // ── Mark line complete when all moves are played ──────────
 
-    if (isAIMovingRef.current) {
-      clearPieceDrag();
-      return false;
+  useEffect(() => {
+    if (moves.length > 0 && moveIndex >= moves.length) {
+      setCompletedVariations(prev => new Set(prev).add(selectedLineIdx));
     }
-    if (moveIndex >= moves.length) {
-      clearPieceDrag();
-      return false;
+  }, [moveIndex, moves.length, selectedLineIdx]);
+
+  // ── Keyboard shortcuts ────────────────────────────────────
+  // ArrowLeft  → prev line
+  // ArrowRight → next line
+  // r          → +1 rep
+
+  useEffect(() => {
+    function onKey(e) {
+      // Skip when typing in an input/textarea
+      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+      if (e.target.isContentEditable) return;
+
+      if (e.key === 'ArrowLeft')  { e.preventDefault(); prevLine(); }
+      if (e.key === 'ArrowRight') { e.preventDefault(); nextLine(); }
+      if (e.key === 'r' || e.key === 'R') incrementRep();
     }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [prevLine, nextLine, incrementRep]);
+
+  // ── onPieceDrop — validate source + target square ───────────────────
+  //
+  // Returning false causes react-chessboard's built-in snap-back (no extra CSS needed).
+  // All validation happens here so pieces are always freely draggable
+  // (react-chessboard's isDraggablePiece is intentionally not used — it was
+  // blocking the correct piece too due to stale closure timing with chess.js state).
+
+  const onPieceDrop = useCallback((sourceSquare, targetSquare) => {
+    if (isAIMovingRef.current)     { clearPieceDrag(); return false; }
+    if (moveIndex >= moves.length) { clearPieceDrag(); return false; }
 
     const isWhiteTurn = chessRef.current.turn() === 'w';
     if (!isBothSidesMode && isWhiteTurn !== isPlayerWhite) {
@@ -117,44 +161,43 @@ export default function OpeningTrainerPage() {
       return false;
     }
 
+    // Try the move on a scratch instance to get its SAN
     const testChess = new Chess(chessRef.current.fen());
     let move;
     try {
       move = testChess.move({ from: sourceSquare, to: targetSquare, promotion: 'q' });
     } catch {
+      onError();
       clearPieceDrag();
       return false;
     }
-    if (!move) {
+    if (!move) { onError(); clearPieceDrag(); return false; }
+
+    // Compare normalised SAN (strip +/# and unify castling notation)
+    const normalize  = s => s.replace(/[+#]/g, '').replace(/0/g, 'O').trim();
+    const isCorrect  = normalize(move.san) === normalize(moves[moveIndex]);
+
+    if (!isCorrect) {
+      onError();           // red X in corner (400 ms)
+      setShowHint(true);   // reveal hint panel
       clearPieceDrag();
-      return false;
+      return false;        // react-chessboard snaps piece back
     }
 
-    const normalize = s => s.replace(/[+#]/g, '').replace(/0/g, 'O').trim();
-    const played = normalize(move.san);
-    const expected = normalize(moves[moveIndex]);
-
-    if (played !== expected) {
-      setFeedback('wrong');
-      setShowHint(true);
-      setTimeout(() => setFeedback(null), 800);
-      clearPieceDrag();
-      return false;
-    }
-
+    // ✅ Correct move — commit it
     chessRef.current.move({ from: sourceSquare, to: targetSquare, promotion: 'q' });
     setFen(chessRef.current.fen());
     setMoveIndex(prev => prev + 1);
-    setFeedback('correct');
+    onSuccess();       // green ✓ in corner (400 ms)
     setShowHint(false);
-    setTimeout(() => setFeedback(null), 800);
     clearPieceDrag();
     return true;
-  }
+  }, [moveIndex, moves, isBothSidesMode, isPlayerWhite, onSuccess, onError, clearPieceDrag]);
+
+  // ── Utility actions ───────────────────────────────────────
 
   function showCorrectMove() {
-    if (moveIndex >= moves.length) return;
-    if (isAIMovingRef.current) return;
+    if (moveIndex >= moves.length || isAIMovingRef.current) return;
     try {
       const result = chessRef.current.move(moves[moveIndex].replace(/0/g, 'O'));
       if (result) {
@@ -172,49 +215,19 @@ export default function OpeningTrainerPage() {
     isAIMovingRef.current = false;
     setFen(chessRef.current.fen());
     setMoveIndex(0);
-    setFeedback(null);
     setShowHint(false);
+    // feedback auto-clears via useMoveValidation timer — nothing to reset here
   }
 
-  // Variation navigation functions
-  const handleRepeatLine = useCallback(() => {
-    resetTrainer();
-  }, []);
+  const handleRepeatLine = useCallback(() => resetTrainer(), []);
 
-  const handleNextLine = useCallback(() => {
-    if (currentVariationIndex < variations.length - 1) {
-      // Mark current as completed before switching
-      if (moveIndex >= moves.length) {
-        setCompletedVariations(prev => new Set(prev).add(currentVariationIndex));
-      }
-      setCurrentVariationIndex(prev => prev + 1);
-    }
-  }, [currentVariationIndex, moveIndex, moves.length, variations.length]);
+  // Switching lines via the navigator/selector also resets the board (handled by the selectedLine useEffect)
+  const handleSelectLine = useCallback((idx) => {
+    selectLine(idx);
+    // Board reset happens in the selectedLine useEffect automatically
+  }, [selectLine]);
 
-  const handleChooseLine = useCallback(() => {
-    setShowVariationModal(true);
-  }, []);
-
-  const handleSelectVariation = useCallback((index) => {
-    if (index !== currentVariationIndex) {
-      // Mark current as completed if finished before switching
-      if (moveIndex >= moves.length) {
-        setCompletedVariations(prev => new Set(prev).add(currentVariationIndex));
-      }
-      setCurrentVariationIndex(index);
-    }
-  }, [currentVariationIndex, moveIndex, moves.length]);
-
-  const handleHint = useCallback(() => {
-    setShowHint(true);
-  }, []);
-
-  // Mark variation as completed when finished
-  useEffect(() => {
-    if (moves.length > 0 && moveIndex >= moves.length) {
-      setCompletedVariations(prev => new Set(prev).add(currentVariationIndex));
-    }
-  }, [moveIndex, moves.length, currentVariationIndex]);
+  // ── Guard: no opening selected ────────────────────────────
 
   if (!openingData) {
     return (
@@ -232,13 +245,15 @@ export default function OpeningTrainerPage() {
 
   return (
     <div style={{ maxWidth: 1000, margin: '0 auto', padding: 20 }}>
-      {/* Header */}
+
+      {/* ── Page header ──────────────────────────────────────── */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 24, marginBottom: 32 }}>
         <button
           style={{
             display: 'flex', alignItems: 'center', gap: 8,
             background: 'var(--bg-surface-2)', border: '1px solid var(--border)',
             padding: '8px 16px', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer',
+            color: 'var(--text-primary)',
           }}
           onClick={() => navigate(returnTo)}
         >
@@ -247,20 +262,24 @@ export default function OpeningTrainerPage() {
         <h1 style={{ fontSize: 24, margin: 0 }}>{openingData.name}</h1>
       </div>
 
-      {/* Grid */}
+      {/* ── Two-column grid: board | sidebar ─────────────────── */}
       <div style={{
         display: 'grid',
         gridTemplateColumns: `minmax(300px, ${boardWidth + 20}px) 340px`,
         gap: 32,
         justifyContent: 'center',
       }}>
-        {/* Board */}
+
+        {/* ── Board column ─────────────────────────────────── */}
         <div>
           <div style={{
-            position: 'relative', background: 'var(--bg-surface)',
-            borderRadius: 12, overflow: 'hidden',
-            boxShadow: 'var(--shadow-lg)', border: '1px solid var(--border)',
-          }} className="opening-trainer-board-shell">
+            position: 'relative',
+            background: 'var(--bg-surface)',
+            borderRadius: 12,
+            overflow: 'hidden',
+            boxShadow: 'var(--shadow-lg)',
+            border: '1px solid var(--border)',
+          }}>
             <Chessboard
               id="opening-trainer-board"
               position={fen}
@@ -273,70 +292,114 @@ export default function OpeningTrainerPage() {
               clearPremovesOnRightClick={true}
               customDarkSquareStyle={{ backgroundColor: boardTheme.dark }}
               customLightSquareStyle={{ backgroundColor: boardTheme.light }}
-              animationDurationInMs={200}
+              animationDurationInMs={150}
             />
 
-            {feedback && (
-              <div style={{
-                position: 'absolute', top: '50%', left: '50%',
-                transform: 'translate(-50%, -50%)',
-                fontSize: 80, zIndex: 100, pointerEvents: 'none',
-                color: feedback === 'correct' ? 'var(--accent-green)' : 'var(--accent-red)',
-                animation: 'feedbackPop 0.5s ease forwards',
-              }}>
-                {feedback === 'correct' ? <HiCheckCircle /> : <HiXCircle />}
-              </div>
-            )}
+            {/* Corner feedback indicator — pointer-events:none so it never blocks drags */}
+            <MoveIndicator feedback={feedback} />
           </div>
         </div>
 
-        {/* Sidebar */}
-        <div>
+        {/* ── Sidebar ──────────────────────────────────────── */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+
+          {/* Line selector — always visible */}
+          <div style={{
+            background: 'var(--bg-surface)',
+            border: '1px solid var(--border)',
+            borderRadius: 16,
+            padding: 20,
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 12,
+          }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              Line
+            </div>
+
+            {/* Dropdown */}
+            <LineSelector
+              lines={lines}
+              selectedIdx={selectedLineIdx}
+              onSelect={handleSelectLine}
+              getLineStats={getLineStats}
+              difficulty={openingData.difficulty}
+            />
+
+            {/* Prev / Next navigator */}
+            <LineNavigator
+              selectedIdx={selectedLineIdx}
+              total={totalLines}
+              onPrev={prevLine}
+              onNext={nextLine}
+              isFirst={isFirst}
+              isLast={isLast}
+            />
+          </div>
+
+          {/* Repetition counter */}
+          <RepetitionCounter
+            stats={selectedLineStats}
+            onIncrement={incrementRep}
+            isReady={isFinished}
+          />
+
+          {/* Training panel */}
           {isFinished ? (
             <div style={{
-              background: 'var(--bg-surface)', border: '1px solid var(--accent-green)',
-              borderRadius: 16, padding: 24, textAlign: 'center',
+              background: 'var(--bg-surface)',
+              border: '1px solid var(--accent-green)',
+              borderRadius: 16,
+              padding: 24,
+              textAlign: 'center',
             }}>
               <HiCheckCircle style={{ fontSize: 48, color: 'var(--accent-green)', marginBottom: 16 }} />
-              <h2>Opening Learned!</h2>
-              <button
-                style={{
-                  background: 'var(--accent-gold)', border: 'none', color: '#1a1400',
-                  padding: '10px 20px', borderRadius: 8, fontWeight: 700, cursor: 'pointer',
-                  display: 'flex', alignItems: 'center', gap: 8, margin: '0 auto',
-                }}
-                onClick={resetTrainer}
-              >
-                <HiRefresh /> Practice Again
-              </button>
+              <h2 style={{ margin: '0 0 16px' }}>Line Complete!</h2>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <button
+                  style={{
+                    background: 'var(--accent-gold)', border: 'none',
+                    color: '#1a1400', padding: '10px 20px', borderRadius: 8,
+                    fontWeight: 700, cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', gap: 8, justifyContent: 'center',
+                  }}
+                  onClick={handleRepeatLine}
+                >
+                  <HiRefresh /> Practice Again
+                </button>
+                {!isLast && (
+                  <button
+                    style={{
+                      background: 'var(--bg-surface-2)', border: '1px solid var(--border)',
+                      color: 'var(--text-primary)', padding: '10px 20px', borderRadius: 8,
+                      fontWeight: 600, cursor: 'pointer',
+                    }}
+                    onClick={nextLine}
+                  >
+                    Next Line →
+                  </button>
+                )}
+              </div>
             </div>
           ) : (
             <div style={{
-              background: 'var(--bg-surface)', border: '1px solid var(--border)',
-              borderRadius: 16, padding: 24,
+              background: 'var(--bg-surface)',
+              border: '1px solid var(--border)',
+              borderRadius: 16,
+              padding: 24,
             }}>
-              <h3 style={{ fontSize: 18, margin: '0 0 12px 0' }}>Instructions</h3>
+              <h3 style={{ fontSize: 16, margin: '0 0 10px 0' }}>Instructions</h3>
               <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 20 }}>
-                {isBothSidesMode ? (
-                  <>Play both sides of the line in order.</>
-                ) : (
-                  <>Play for <strong>{openingData.color}</strong></>
-                )}
+                {isBothSidesMode
+                  ? 'Play both sides of the line in order.'
+                  : <>Play for <strong>{openingData.color}</strong></>}
               </p>
 
-              {/* Show line indicator if multiple variations */}
-              {variations.length > 1 && (
-                <div style={{
-                  fontSize: 14, fontWeight: 600, color: 'var(--text-secondary)',
-                  marginBottom: 16, textAlign: 'center',
-                }}>
-                  Line {currentVariationIndex + 1} of {variations.length}
-                </div>
-              )}
-
+              {/* Hint panel */}
               {showHint && moveIndex < moves.length && (
                 <div style={{
-                  background: 'var(--accent-gold-10)', border: '1px solid var(--accent-gold-20)',
+                  background: 'var(--accent-gold-10)',
+                  border: '1px solid var(--accent-gold-20)',
                   borderRadius: 12, padding: 16, marginBottom: 20,
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12, fontSize: 14 }}>
@@ -345,8 +408,9 @@ export default function OpeningTrainerPage() {
                   </div>
                   <button
                     style={{
-                      width: '100%', padding: 8, background: 'var(--accent-gold)',
-                      color: '#1a1400', border: 'none', borderRadius: 6,
+                      width: '100%', padding: 8,
+                      background: 'var(--accent-gold)', color: '#1a1400',
+                      border: 'none', borderRadius: 6,
                       fontSize: 13, fontWeight: 700, cursor: 'pointer',
                     }}
                     onClick={showCorrectMove}
@@ -356,14 +420,14 @@ export default function OpeningTrainerPage() {
                 </div>
               )}
 
-              {/* Existing buttons: Reset and Get Hint */}
-              <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
+              {/* Action buttons */}
+              <div style={{ display: 'flex', gap: 12 }}>
                 <button
                   style={{
-                    background: 'none', border: '1px solid var(--border)',
+                    flex: 1, background: 'none', border: '1px solid var(--border)',
                     color: 'var(--text-primary)', padding: '8px 12px',
                     borderRadius: 6, cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', gap: 6,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                   }}
                   onClick={resetTrainer}
                 >
@@ -371,85 +435,45 @@ export default function OpeningTrainerPage() {
                 </button>
                 <button
                   style={{
-                    background: 'none', border: '1px solid var(--border)',
+                    flex: 1, background: 'none', border: '1px solid var(--border)',
                     color: 'var(--text-primary)', padding: '8px 12px',
                     borderRadius: 6, cursor: 'pointer',
-                    display: 'flex', alignItems: 'center', gap: 6,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                   }}
                   onClick={() => setShowHint(true)}
                 >
-                  <HiLightBulb /> Get Hint
+                  <HiLightBulb /> Hint
                 </button>
               </div>
-
-              {/* Variation buttons - Only show if opening has multiple variations */}
-              {variations.length > 1 && (
-                <>
-                  <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
-                    <button
-                      style={{
-                        background: 'none', border: '1px solid var(--border)',
-                        color: 'var(--text-primary)', padding: '8px 12px',
-                        borderRadius: 6, cursor: 'pointer',
-                        display: 'flex', alignItems: 'center', gap: 6,
-                      }}
-                      onClick={handleRepeatLine}
-                    >
-                      <HiRefresh /> Repeat Line
-                    </button>
-                    <button
-                      style={{
-                        background: 'none', border: '1px solid var(--border)',
-                        color: 'var(--text-primary)', padding: '8px 12px',
-                        borderRadius: 6, cursor: 'pointer',
-                        display: 'flex', alignItems: 'center', gap: 6,
-                        opacity: currentVariationIndex >= variations.length - 1 ? 0.4 : 1,
-                      }}
-                      onClick={handleNextLine}
-                      disabled={currentVariationIndex >= variations.length - 1}
-                    >
-                      <HiArrowRight /> Next Line
-                    </button>
-                  </div>
-                  <div style={{ display: 'flex', gap: 12 }}>
-                    <button
-                      style={{
-                        background: 'none', border: '1px solid var(--border)',
-                        color: 'var(--text-primary)', padding: '8px 12px',
-                        borderRadius: 6, cursor: 'pointer',
-                        display: 'flex', alignItems: 'center', gap: 6,
-                        flex: 1,
-                      }}
-                      onClick={handleChooseLine}
-                    >
-                      <HiViewGrid /> Choose Line
-                    </button>
-                  </div>
-                </>
-              )}
             </div>
           )}
         </div>
       </div>
 
-      {/* Variation Selector Modal */}
-      {showVariationModal && variations.length > 1 && (
-        <VariationSelectorModal
-          variations={variations}
-          currentVariationIndex={currentVariationIndex}
-          completedVariations={completedVariations}
-          onSelect={handleSelectVariation}
-          onClose={() => setShowVariationModal(false)}
-        />
-      )}
+      {/* Keyboard shortcut hint */}
+      <p style={{ textAlign: 'center', fontSize: 12, color: 'var(--text-muted)', marginTop: 24 }}>
+        Keyboard: <kbd style={kbdStyle}>←</kbd> prev line &nbsp;
+        <kbd style={kbdStyle}>→</kbd> next line &nbsp;
+        <kbd style={kbdStyle}>R</kbd> +1 rep
+      </p>
 
       <style>{`
-        @keyframes feedbackPop {
-          0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.5); }
-          50%  { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
-          100% { opacity: 0; transform: translate(-50%, -50%) scale(1); }
+        @keyframes moveIndicatorOut {
+          0%   { opacity: 1; transform: scale(1);   }
+          75%  { opacity: 1; transform: scale(1.05); }
+          100% { opacity: 0; transform: scale(0.75); }
         }
       `}</style>
     </div>
   );
 }
+
+const kbdStyle = {
+  display: 'inline-block',
+  padding: '1px 6px',
+  background: 'var(--bg-surface-2)',
+  border: '1px solid var(--border)',
+  borderRadius: 4,
+  fontFamily: 'monospace',
+  fontSize: 11,
+};

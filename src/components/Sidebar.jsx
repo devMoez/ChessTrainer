@@ -6,7 +6,7 @@ import {
   HiCog,
   HiHome,
   HiPlay,
-  HiLightBulb,
+  HiViewBoards,
 } from 'react-icons/hi';
 
 const NAV_ITEMS = [
@@ -15,7 +15,7 @@ const NAV_ITEMS = [
   { to: '/openings', label: 'Openings', Icon: HiBookOpen },
   { to: '/analysis', label: 'Analysis', Icon: HiChartBar },
   { to: '/puzzles', label: 'Puzzles', Icon: HiBookOpen },
-  { to: '/coach', label: 'AI Coach', Icon: HiLightBulb },
+  { to: '/study', label: 'Game Study', Icon: HiViewBoards },
 ];
 
 export default function Sidebar() {
