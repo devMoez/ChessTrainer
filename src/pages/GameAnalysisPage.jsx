@@ -9,6 +9,7 @@ import {
   HiChevronDoubleLeft, HiChevronDoubleRight,
   HiChevronDown,
 } from 'react-icons/hi';
+import { fetchOpenRouter } from '../utils/openRouterKeys.js';
 import './GameAnalysisPage.css';
 
 // ============================================================
@@ -18,25 +19,18 @@ import './GameAnalysisPage.css';
 const MODEL = 'anthropic/claude-sonnet-4-6';
 const MAX_TOKENS = 1000;
 
-function getApiKey() {
-  return localStorage.getItem('openRouterKey') || '';
-}
-
 async function callClaude(messages) {
-  const key = getApiKey();
-  if (!key) throw new Error('No API key set. Configure one on the AI Coach page.');
-
-  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${key}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ model: MODEL, max_tokens: MAX_TOKENS, messages }),
-  });
+  let response;
+  try {
+    response = await fetchOpenRouter({ model: MODEL, max_tokens: MAX_TOKENS, messages });
+  } catch (err) {
+    if (err.message.startsWith('All API keys exhausted')) {
+      throw new Error('All API keys have run out of credits. Add a new key on the AI Coach page.');
+    }
+    throw err;
+  }
 
   if (response.status === 401) throw new Error('Invalid API key. Update it on the AI Coach page.');
-  if (response.status === 402) throw new Error('API key has no credits. Update it on the AI Coach page.');
   if (!response.ok) throw new Error(`OpenRouter error: ${response.status}`);
 
   const data = await response.json();

@@ -21,9 +21,10 @@ import { getPieceRenderers } from '../chess/pieceRenderers.jsx';
 import { addMemory, rateMemory, buildSystemPrompt } from '../hooks/useAIMemory.js';
 import { useApp } from '../context/AppContext.jsx';
 import { DEFAULT_FEN } from '../chess/analysisHelpers.js';
+import { fetchOpenRouter } from '../utils/openRouterKeys.js';
 import './AICoachPage.css';
 
-const DEFAULT_KEY = import.meta.env.VITE_OPENROUTER_API_KEY
+const DEFAULT_KEY = import.meta.env.VITE_OPENROUTER_API_KEY;
 const MODEL = "google/gemini-2.0-flash-001";
 
 export default function AICoachPage() {
@@ -57,25 +58,13 @@ export default function AICoachPage() {
 
   const callOpenRouter = async (messages) => {
     try {
-      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${apiKey}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({ model: MODEL, messages })
-      });
+      const response = await fetchOpenRouter({ model: MODEL, messages });
 
       if (response.status === 401) {
         localStorage.removeItem('openRouterKey');
         setApiKey('');
         setIsKeyModalOpen(true);
         throw new Error("Unauthorized: Invalid API Key. Please update your key.");
-      }
-
-      if (response.status === 402) {
-        setIsKeyModalOpen(true);
-        throw new Error("Payment Required: The current API key has no credits or has reached its limit. Please provide your own OpenRouter key.");
       }
 
       if (!response.ok) {
@@ -85,6 +74,10 @@ export default function AICoachPage() {
       const data = await response.json();
       return data.choices[0].message.content;
     } catch (err) {
+      if (err.message.startsWith('All API keys exhausted')) {
+        setIsKeyModalOpen(true);
+        throw new Error("All API keys have run out of credits. Please add a new OpenRouter key.");
+      }
       throw err;
     }
   };
@@ -705,12 +698,22 @@ IMPORTANT: Return ONLY the raw JSON array. NO markdown blocks. NO unescaped quot
                 }
               }} style={{ color: 'var(--text-muted)' }}><HiX size={20} /></button>
             </div>
-            <p style={{ fontSize: 14, color: 'var(--text-secondary)' }}>
-              Enter your OpenRouter API key. Get one at <a href="https://openrouter.ai/keys" target="_blank" rel="noreferrer" style={{ color: 'var(--accent-gold)' }}>openrouter.ai/keys</a>.
+            <p style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 6 }}>
+              Enter an API key. Two options:
             </p>
+            <ul style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 12px', paddingLeft: 18, lineHeight: 1.8 }}>
+              <li>
+                <strong style={{ color: 'var(--accent-gold)' }}>Free</strong> — Google AI Studio key (<code>AIza…</code>)
+                {' '}<a href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer" style={{ color: 'var(--accent-gold)' }}>get one free here</a>
+              </li>
+              <li>
+                <strong>Paid</strong> — OpenRouter key (<code>sk-or-v1-…</code>)
+                {' '}<a href="https://openrouter.ai/keys" target="_blank" rel="noreferrer" style={{ color: 'var(--accent-gold)' }}>openrouter.ai/keys</a>
+              </li>
+            </ul>
             <input
               type="password"
-              placeholder="sk-or-v1-..."
+              placeholder="AIza... or sk-or-v1-..."
               value={keyInput}
               onChange={e => setKeyInput(e.target.value)}
               autoFocus

@@ -25,6 +25,7 @@ import { coordinateToSAN } from '../utils/moveNotation.js';
 import { getPieceRenderers } from '../chess/pieceRenderers.jsx';
 import useChessSounds from '../hooks/useChessSounds.js';
 import useChessDragClass from '../hooks/useChessDragClass.js';
+import useMoveAnalyzer from '../hooks/useMoveAnalyzer.js';
 import {
   BrokenCrownIcon,
   CrownIcon,
@@ -137,6 +138,7 @@ function getParticipant(mode, color, playerColor, difficulty) {
 
 export default function PlayWorkspace({ mode = 'engine' }) {
   const { boardTheme, pieceStyle, showEvalBar, showLegalDots } = useApp();
+  const { analyses, latestAnalysis, isAnalyzing, analyzeMove, resetAnalyses } = useMoveAnalyzer();
   const location = useLocation();
   const navigate = useNavigate();
   const { playMove, playCapture, playCheck, playGameEnd } = useChessSounds();
@@ -158,6 +160,7 @@ export default function PlayWorkspace({ mode = 'engine' }) {
   const resultRef = useRef(null);
   const pendingBestMoveRef = useRef(null);
   const timerTickRef = useRef(0);
+  const moveIndexRef = useRef(0);
 
   const [fen, setFen] = useState(() => new Chess(startingFen).fen());
   const [boardPx, setBoardPx] = useState(DEFAULT_BOARD_PX);
@@ -329,6 +332,8 @@ export default function PlayWorkspace({ mode = 'engine' }) {
     latestFenRef.current = nextGame.fen();
     resultRef.current = null;
     pendingBestMoveRef.current = null;
+    moveIndexRef.current = 0;
+    resetAnalyses();
 
     setFen(nextGame.fen());
     setSideToMove(nextGame.turn());
@@ -344,7 +349,7 @@ export default function PlayWorkspace({ mode = 'engine' }) {
 
     if (nextOrientation) setBoardOrientation(nextOrientation);
     if (nextPlayerColor) setPlayerColor(nextPlayerColor);
-  }, []);
+  }, [resetAnalyses]);
 
   const startConfiguredGame = useCallback((options = {}) => {
     const resolvedColor = mode === 'engine'
@@ -386,6 +391,8 @@ export default function PlayWorkspace({ mode = 'engine' }) {
     latestFenRef.current = previewGame.fen();
     resultRef.current = null;
     pendingBestMoveRef.current = null;
+    moveIndexRef.current = 0;
+    resetAnalyses();
 
     setGameStarted(false);
     setSetupOpen(true);
@@ -399,15 +406,21 @@ export default function PlayWorkspace({ mode = 'engine' }) {
     setIsResultModalOpen(false);
     setEngineThinking(false);
     setEngineEval({ score: '0.0', bestMove: '--' });
-  }, [startingFen]);
+  }, [resetAnalyses, startingFen]);
 
   const closeSetup = useCallback(() => {
     navigate('/play');
   }, [navigate]);
 
   const syncMoveIntoState = useCallback((nextGame, moveResult) => {
+    const prevFen = chessRef.current.fen();
+    const moveIdx = moveIndexRef.current;
+    moveIndexRef.current += 1;
+
     latestFenRef.current = nextGame.fen();
     chessRef.current = nextGame;
+
+    analyzeMove(moveIdx, moveResult.san, prevFen);
 
     clearSelection();
     setFen(nextGame.fen());
@@ -449,7 +462,7 @@ export default function PlayWorkspace({ mode = 'engine' }) {
     if (result) {
       finishGame(result);
     }
-  }, [clearSelection, finishGame, playCapture, playCheck, playMove, timeConfig.incrementMs]);
+  }, [analyzeMove, clearSelection, finishGame, playCapture, playCheck, playMove, timeConfig.incrementMs]);
 
   const applyUciMove = useCallback((uciMove) => {
     const parsed = parseUciMove(uciMove);
@@ -794,16 +807,76 @@ export default function PlayWorkspace({ mode = 'engine' }) {
                     moveHistory.reduce((rows, move, index) => {
                       if (index % 2 === 0) rows.push([move, moveHistory[index + 1]]);
                       return rows;
-                    }, []).map((pair, index) => (
-                      <div key={`${pair[0]?.san}-${index}`} className="move-pair">
-                        <span className="move-num">{index + 1}.</span>
-                        <span className={`move-san white${moveHistory.length - 1 === index * 2 ? ' current' : ''}`}>{pair[0]?.san ?? '--'}</span>
-                        <span className={`move-san black${moveHistory.length - 1 === index * 2 + 1 ? ' current' : ''}`}>{pair[1]?.san ?? '--'}</span>
-                      </div>
-                    ))
+                    }, []).map((pair, index) => {
+                      const whiteAnalysis = analyses[index * 2];
+                      const blackAnalysis = analyses[index * 2 + 1];
+                      return (
+                        <div key={`${pair[0]?.san}-${index}`} className="move-pair">
+                          <span className="move-num">{index + 1}.</span>
+                          <span className={`move-san white${moveHistory.length - 1 === index * 2 ? ' current' : ''}`}>
+                            {pair[0]?.san ?? '--'}
+                            {whiteAnalysis && (
+                              <span
+                                className="move-analysis-badge-icon"
+                                style={{ color: whiteAnalysis.color }}
+                                title={whiteAnalysis.explanation}
+                              >
+                                {whiteAnalysis.icon}
+                              </span>
+                            )}
+                          </span>
+                          <span className={`move-san black${moveHistory.length - 1 === index * 2 + 1 ? ' current' : ''}`}>
+                            {pair[1]?.san ?? '--'}
+                            {pair[1] && blackAnalysis && (
+                              <span
+                                className="move-analysis-badge-icon"
+                                style={{ color: blackAnalysis.color }}
+                                title={blackAnalysis.explanation}
+                              >
+                                {blackAnalysis.icon}
+                              </span>
+                            )}
+                          </span>
+                        </div>
+                      );
+                    })
                   )}
                 </div>
               </div>
+
+              {(latestAnalysis || isAnalyzing) && gameStarted && (
+                <div
+                  className="move-analysis-toast"
+                  style={latestAnalysis ? { borderLeft: `3px solid ${latestAnalysis.color}` } : undefined}
+                >
+                  {latestAnalysis ? (
+                    <>
+                      <div className="move-analysis-toast-header">
+                        <span className="move-analysis-icon" style={{ color: latestAnalysis.color }}>
+                          {latestAnalysis.icon}
+                        </span>
+                        <span className="move-analysis-classification" style={{ color: latestAnalysis.color }}>
+                          {latestAnalysis.classification}
+                        </span>
+                        {isAnalyzing && (
+                          <span style={{ color: 'var(--text-muted)', fontSize: '10px', marginLeft: 'auto' }}>
+                            analyzing…
+                          </span>
+                        )}
+                      </div>
+                      <p className="move-analysis-explanation">{latestAnalysis.explanation}</p>
+                      {latestAnalysis.bestMove && (
+                        <p className="move-analysis-best">
+                          Best: <strong>{latestAnalysis.bestMove}</strong>
+                          {latestAnalysis.bestMoveExplanation ? ` — ${latestAnalysis.bestMoveExplanation}` : ''}
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    <p className="move-analysis-pending">Analyzing move…</p>
+                  )}
+                </div>
+              )}
 
               <div className={`play-clock-card${sideToMove === bottomColor && gameStarted && !gameResult ? ' is-active' : ''}`}>
                 <div className="play-clock-copy">

@@ -4850,3 +4850,72 @@ body.chess-piece-dragging .chessboard-container [data-piece] {
     scroll-behavior: auto !important;
   }
 }
+
+/* ============================================================
+   MOVE ANALYSIS TOAST & ICONS
+   ============================================================ */
+.move-analysis-badge-icon {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 10px;
+  font-weight: 700;
+  margin-left: 3px;
+  cursor: help;
+  vertical-align: middle;
+}
+
+.move-analysis-toast {
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  padding: 10px 12px;
+  font-size: 12px;
+  line-height: 1.4;
+  border-left: 3px solid transparent;
+  animation: maFadeIn 0.18s ease;
+}
+
+@keyframes maFadeIn {
+  from { opacity: 0; transform: translateY(3px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.move-analysis-toast-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+
+.move-analysis-icon {
+  font-family: 'Roboto Mono', monospace;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.move-analysis-classification {
+  font-weight: 600;
+  font-size: 12px;
+  text-transform: capitalize;
+  letter-spacing: 0.02em;
+}
+
+.move-analysis-explanation {
+  color: var(--text-secondary);
+  font-size: 11px;
+  margin: 0;
+  line-height: 1.45;
+}
+
+.move-analysis-best {
+  color: var(--accent-gold);
+  font-size: 11px;
+  margin: 5px 0 0;
+  line-height: 1.4;
+}
+
+.move-analysis-pending {
+  color: var(--text-muted);
+  font-size: 11px;
+  margin: 0;
+  text-align: center;
+}
