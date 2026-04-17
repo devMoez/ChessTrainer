@@ -192,7 +192,7 @@ export default function SettingsPage() {
           </div>
           <div>
             <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4 }}>
-              Chess Trainer v1.0
+              Chess Trainer v2.1
             </div>
             <div style={{ fontSize: 13, color: 'var(--text-secondary)' }}>
               Powered by <span style={{ color: 'var(--accent-gold)' }}>Stockfish 18.0.5</span> - React + Vite
